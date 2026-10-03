@@ -80,7 +80,13 @@ def main():
         del df
         print(json.dumps(summary["counts"]["all"]), flush=True)
 
-    # 2. kernels
+    # 2. kernels: the CUDA parity tests first (they skip on CPU, so this is where they actually run)
+    tests = subprocess.run([sys.executable, "-m", "pytest", "-q", str(SRC / "tests" / "test_kernels_cuda.py"), "-p", "no:cacheprovider",
+                            "--rootdir", str(SRC)], text=True, capture_output=True)
+    (RES / "cuda_tests.txt").write_text(tests.stdout[-3000:] + tests.stderr[-1000:])
+    print(tests.stdout[-600:], flush=True)
+    if tests.returncode != 0:
+        raise SystemExit("CUDA parity tests failed")
     sh(sys.executable, "-m", "wafer.bench_kernels", "--data", str(data_npz), "--raw", str(WORK / "raw_sample.npz"),
        "--out", str(RES / "kernels.json"))
 

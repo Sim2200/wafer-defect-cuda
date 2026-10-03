@@ -49,7 +49,7 @@ def push_source(user: str) -> str:
     slug = f"{user}/wafer-defect-cuda-src"
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
-        for sub in ("src", "kernels"):
+        for sub in ("src", "kernels", "tests"):
             shutil.copytree(ROOT / sub, d / sub, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         (d / "dataset-metadata.json").write_text(json.dumps({"title": "wafer-defect-cuda-src", "id": slug, "licenses": [{"name": "CC0-1.0"}]}))
         exists = slug.split("/")[1] in kaggle("datasets", "list", "--mine", check=False)
@@ -90,7 +90,7 @@ def pull(kid: str) -> None:
     results = ROOT / "results"
     results.mkdir(exist_ok=True)
     for f in out.rglob("*"):
-        if f.suffix in (".json", ".png") and f.is_file():
+        if f.suffix in (".json", ".png", ".txt") and f.is_file():
             shutil.copy(f, results / f.name)
             print("  pulled", f.name)
     log = next(out.glob("*.log"), None)

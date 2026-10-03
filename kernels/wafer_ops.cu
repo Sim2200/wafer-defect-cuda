@@ -183,8 +183,9 @@ __global__ void median3x3_tiled_kernel(const float* __restrict__ in, float* __re
   const float* img = in + (long)b * H * W;
   for (int ly = ty; ly < TILE + 2; ly += TILE)
     for (int lx = tx; lx < TILE + 2; lx += TILE) {
-      int gy = min(max(blockIdx.y * TILE + ly - 1, 0), H - 1);
-      int gx = min(max(blockIdx.x * TILE + lx - 1, 0), W - 1);
+      // Cast before the clamp: blockIdx is unsigned, and 0 - 1 would wrap instead of going negative.
+      int gy = min(max((int)blockIdx.y * TILE + ly - 1, 0), H - 1);
+      int gx = min(max((int)blockIdx.x * TILE + lx - 1, 0), W - 1);
       tile[ly][lx] = img[gy * W + gx];
     }
   __syncthreads();
