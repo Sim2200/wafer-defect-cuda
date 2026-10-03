@@ -1,0 +1,79 @@
+{
+  "labelled_wafers": 172950,
+  "lots": 10762,
+  "size": 64,
+  "classes": [
+    "Center",
+    "Donut",
+    "Edge-Loc",
+    "Edge-Ring",
+    "Loc",
+    "Near-full",
+    "Random",
+    "Scratch",
+    "none"
+  ],
+  "counts": {
+    "all": {
+      "Center": 4294,
+      "Donut": 555,
+      "Edge-Loc": 5189,
+      "Edge-Ring": 9680,
+      "Loc": 3593,
+      "Near-full": 149,
+      "Random": 866,
+      "Scratch": 1193,
+      "none": 147431
+    },
+    "train": {
+      "Center": 2952,
+      "Donut": 397,
+      "Edge-Loc": 3660,
+      "Edge-Ring": 6799,
+      "Loc": 2479,
+      "Near-full": 101,
+      "Random": 556,
+      "Scratch": 846,
+      "none": 103086
+    },
+    "val": {
+      "Center": 407,
+      "Donut": 46,
+      "Edge-Loc": 502,
+      "Edge-Ring": 925,
+      "Loc": 362,
+      "Near-full": 18,
+      "Random": 114,
+      "Scratch": 106,
+      "none": 14825
+    },
+    "test": {
+      "Center": 935,
+      "Donut": 112,
+      "Edge-Loc": 1027,
+      "Edge-Ring": 1956,
+      "Loc": 752,
+      "Near-full": 30,
+      "Random": 196,
+      "Scratch": 241,
+      "none": 29520
+    }
+  },
+  "split_sizes": {
+    "train": 120876,
+    "val": 17305,
+    "test": 34769
+  },
+  "none_share": 0.8524,
+  "split": "lot-grouped, per-class stratified by lot majority label, seed 0",
+  "raw_shape_examples": {
+    "(26, 26)": 6365,
+    "(38, 36)": 1483,
+    "(63, 62)": 1424,
+    "(41, 41)": 514,
+    "(69, 73)": 484,
+    "(39, 31)": 454,
+    "(50, 43)": 398,
+    "(38, 38)": 382
+  }
+}

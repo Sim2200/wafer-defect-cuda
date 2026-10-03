@@ -1,0 +1,75 @@
+{
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu128",
+  "cuda": "12.8",
+  "batch": 1024,
+  "iters": 50,
+  "repeats": 3,
+  "timing": "CUDA events, median of repeats of mean ms per call",
+  "rows": [
+    {
+      "op": "conv3x3",
+      "variant": "pytorch_cudnn",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.232,
+      "wafers_per_second": 4413111.2
+    },
+    {
+      "op": "conv3x3",
+      "variant": "cuda_naive",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.3758,
+      "wafers_per_second": 2725171.6
+    },
+    {
+      "op": "conv3x3",
+      "variant": "cuda_tiled",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.5346,
+      "wafers_per_second": 1915520.7
+    },
+    {
+      "op": "median3x3",
+      "variant": "pytorch_unfold",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 99.1095,
+      "wafers_per_second": 10332.0
+    },
+    {
+      "op": "median3x3",
+      "variant": "cuda_naive",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.1432,
+      "wafers_per_second": 7148857.1
+    },
+    {
+      "op": "median3x3",
+      "variant": "cuda_tiled",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.2886,
+      "wafers_per_second": 3548616.1
+    },
+    {
+      "op": "preprocess",
+      "variant": "pytorch_per_wafer_loop",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 132.0608,
+      "wafers_per_second": 7754.0
+    },
+    {
+      "op": "preprocess",
+      "variant": "cuda_packed",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 2.384185791015625e-07,
+      "ms_per_batch": 0.2941,
+      "wafers_per_second": 3482379.2
+    }
+  ]
+}
