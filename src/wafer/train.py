@@ -30,6 +30,64 @@ from .model import build
 from .sampler import DistributedBalancedSampler
 
 
+class Augment:
+    def __init__(self, augment_type: str, seed: int, rank: int = 0):
+        self.augment_type = augment_type
+        self.gen = torch.Generator()
+        self.gen.manual_seed(seed + rank)
+
+    def __call__(self, batch: torch.Tensor) -> torch.Tensor:
+        if self.augment_type == "none":
+            return batch
+        if self.augment_type != "flips":
+            return batch
+
+        b = batch.shape[0]
+        for i in range(b):
+            choice = torch.randint(0, 8, (1,), generator=self.gen).item()
+            if choice & 1:
+                batch[i] = torch.flip(batch[i], dims=[-2])
+            if choice & 2:
+                batch[i] = torch.flip(batch[i], dims=[-1])
+            rot = (choice >> 2) % 4
+            for _ in range(rot):
+                batch[i] = torch.rot90(batch[i], dims=[-2, -1])
+        return batch
+
+
+def oversample_indices(y: np.ndarray, factor: float) -> tuple[np.ndarray, dict]:
+    """Duplicate minority class indices until each class has at least factor x its original count, capped at median."""
+    if factor <= 0:
+        return np.arange(len(y)), {}
+
+    counts = np.bincount(y)
+    orig_counts = counts.copy()
+    nonzero_counts = counts[counts > 0]
+    if len(nonzero_counts) == 0:
+        return np.arange(len(y)), {}
+    median_count = np.median(nonzero_counts)
+
+    indices = []
+    for c in range(len(counts)):
+        mask = np.where(y == c)[0]
+        if len(mask) == 0:
+            continue
+        target = min(int(counts[c] * factor), int(median_count))
+        if target > counts[c]:
+            reps = np.random.choice(mask, size=target - counts[c], replace=True)
+            indices.append(mask)
+            indices.append(reps)
+        else:
+            indices.append(mask)
+
+    indices_arr = np.concatenate(indices)
+    new_y = y[indices_arr]
+    binned = np.bincount(new_y, minlength=len(CLASSES))
+    new_counts = {CLASSES[i]: int(binned[i]) for i in range(len(CLASSES))}
+
+    return indices_arr, new_counts
+
+
 def standardise(x: np.ndarray) -> torch.Tensor:
     """(N, 64, 64) uint8 -> (N, 1, 64, 64) float32, per-wafer standardised (same as the kernel)."""
     t = torch.from_numpy(x).to(torch.float32)
@@ -71,17 +129,44 @@ def main() -> None:
     ap.add_argument("--confusion-png", default="")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--save", default="", help="write the trained weights (state_dict) here, for export")
+    ap.add_argument("--augment", choices=["none", "flips"], default="none")
+    ap.add_argument("--oversample", type=float, default=0.0, help="duplication factor for minority classes")
+    ap.add_argument("--synthetic", default="", help="path to npz with generated wafers")
     a = ap.parse_args()
 
     rank, world, device = setup()
     torch.manual_seed(a.seed + rank)
+    np.random.seed(a.seed + rank)
     d = np.load(a.data)
     x, y = d["x"], d["y"]
     tr, va, te = d["train"], d["val"], d["test"]
-    x_tr = standardise(x[tr])
-    y_tr = torch.from_numpy(y[tr])
-    sampler = DistributedBalancedSampler(y[tr], num_replicas=world, rank=rank,
-                                         samples_per_epoch=a.samples_per_epoch or len(tr), seed=a.seed)
+
+    x_tr_raw = x[tr].copy()
+    y_tr_raw = y[tr].copy()
+
+    synth_counts = {}
+    n_synth = 0
+    if a.synthetic:
+        synth_d = np.load(a.synthetic)
+        x_synth, y_synth = synth_d["x"], synth_d["y"]
+        n_synth = len(x_synth)
+        x_tr_raw = np.concatenate([x_tr_raw, x_synth])
+        y_tr_raw = np.concatenate([y_tr_raw, y_synth])
+        binned = np.bincount(y_synth, minlength=len(CLASSES))
+        synth_counts = {CLASSES[i]: int(binned[i]) for i in range(len(CLASSES))}
+
+    if a.oversample > 0:
+        tr_indices, counts_after = oversample_indices(y_tr_raw, a.oversample)
+        x_tr_raw = x_tr_raw[tr_indices]
+        y_tr_raw = y_tr_raw[tr_indices]
+    else:
+        counts_after = {}
+
+    x_tr = standardise(x_tr_raw)
+    y_tr = torch.from_numpy(y_tr_raw)
+    sampler = DistributedBalancedSampler(y_tr_raw, num_replicas=world, rank=rank,
+                                         samples_per_epoch=a.samples_per_epoch or len(y_tr_raw), seed=a.seed)
+    augment = Augment(a.augment, a.seed, rank)
     loader = DataLoader(TensorDataset(x_tr, y_tr), batch_size=a.batch, sampler=sampler, num_workers=2,
                         pin_memory=device.type == "cuda", drop_last=True)
     model = build(a.model, len(CLASSES)).to(device)
@@ -89,7 +174,7 @@ def main() -> None:
         model = DistributedDataParallel(model, device_ids=[device.index] if device.type == "cuda" else None)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=a.lr, total_steps=a.epochs * len(loader))
-    scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
+    scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
     loss_fn = nn.CrossEntropyLoss()
 
     x_va, x_te = standardise(x[va]), standardise(x[te])
@@ -104,6 +189,7 @@ def main() -> None:
         t0 = time.perf_counter()
         for xb, yb in loader:
             xb, yb = xb.to(device, non_blocking=True), yb.to(device, non_blocking=True)
+            xb = augment(xb)
             with torch.autocast(device_type=device.type, dtype=torch.float16, enabled=device.type == "cuda"):
                 loss = loss_fn(model(xb), yb)
             opt.zero_grad(set_to_none=True)
@@ -137,7 +223,14 @@ def main() -> None:
                "train_counts": class_counts(y[tr]), "test_counts": class_counts(y[te]),
                "total_train_seconds": round(total_s, 1), "per_epoch": epochs,
                "mean_wafers_per_second": round(float(np.mean([e["wafers_per_second"] for e in epochs[1:] or epochs])), 1),
-               "test": test}
+               "test": test, "augment": a.augment}
+        if a.synthetic:
+            out["synthetic_path"] = a.synthetic
+            out["synthetic_wafers"] = n_synth
+            out["synthetic_counts"] = synth_counts
+        if a.oversample > 0:
+            out["oversample_factor"] = a.oversample
+            out["train_counts_effective"] = counts_after
         Path(a.out).parent.mkdir(parents=True, exist_ok=True)
         Path(a.out).write_text(json.dumps(out, indent=2))
         if a.confusion_png:

@@ -10,6 +10,7 @@
     python scripts/run_on_kaggle.py --pull-only
     python scripts/run_on_kaggle.py --experiment trt    # kaggle/run_trt.py: TensorRT engines + Nsight (1 GPU,
                                                         # internet on for the tensorrt/onnxruntime-gpu wheels)
+    python scripts/run_on_kaggle.py --experiment diffusion   # kaggle/run_diffusion.py: DDPM for rare classes (2 GPUs)
 Needs the Kaggle CLI authenticated (~/.kaggle/kaggle.json or ~/.kaggle/access_token).
 """
 
@@ -64,6 +65,7 @@ def push_source(user: str) -> str:
 EXPERIMENTS = {  # name -> (kernel script, internet needed)
     "all": ("run_all.py", False),
     "trt": ("run_trt.py", True),
+    "diffusion": ("run_diffusion.py", True),  # internet for the diffusers wheel
 }
 
 
