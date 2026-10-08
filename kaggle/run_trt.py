@@ -122,10 +122,11 @@ def main():
 
     env = {"gpu": torch.cuda.get_device_name(0), "torch": torch.__version__, "cuda": torch.version.cuda,
            "python": sys.version.split()[0]}
-    # TensorRT and ONNX Runtime GPU come from pip; the Kaggle image has neither. tensorrt-cu12 is the
-    # TensorRT 10 line for CUDA 12 (plain "tensorrt" resolves to the CUDA 13 build, which does not
-    # support the T4's Turing architecture).
-    pip("tensorrt-cu12", "onnx")
+    # TensorRT and ONNX Runtime GPU come from pip; the Kaggle image has neither. Plain "tensorrt"
+    # resolves to a CUDA 13 build; the image has CUDA 12.8.
+    # TensorRT 10.x: TensorRT 11 removed implicit (calibrator-based) INT8 quantization, which is
+    # what wafer.trt_bench uses; the 10 line still supports it and the T4.
+    pip("tensorrt-cu12<11", "onnx")
     ensure_ort_cuda()
     # Nsight Systems is not on the image. Try NVIDIA's CUDA apt repository; if that fails the kernel
     # table comes from torch.profiler (same CUPTI timings) and the summary says so.
