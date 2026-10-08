@@ -1,0 +1,325 @@
+{
+  "env": {
+    "gpu": "Tesla T4",
+    "driver": "580.178.04\n580.178.04",
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "cudnn": 91900,
+    "onnxruntime": "1.22.0",
+    "tensorrt": "10.16.1.11",
+    "onnx_opset": 17,
+    "python": "3.13.15"
+  },
+  "engine_builds": {
+    "fp32": {
+      "precision": "fp32",
+      "build_seconds": 4.4,
+      "engine_bytes": 1912980,
+      "layers_in_network": 25
+    },
+    "fp16": {
+      "precision": "fp16",
+      "build_seconds": 8.1,
+      "engine_bytes": 873412,
+      "layers_in_network": 25
+    },
+    "int8": {
+      "precision": "int8",
+      "build_seconds": 18.0,
+      "engine_bytes": 466580,
+      "layers_in_network": 25,
+      "calibration": {
+        "algorithm": "IInt8EntropyCalibrator2 (KL divergence)",
+        "wafers": 512,
+        "batch": 32,
+        "source": "train split only"
+      }
+    }
+  },
+  "batch_sizes": [
+    1,
+    8,
+    32,
+    128
+  ],
+  "iters_per_point": 100,
+  "warmup": 20,
+  "method": "inputs resident on the GPU; one synchronised call per iteration timed on the host; p50/p95 over iters; GPU memory is nvidia-smi memory.used while that backend runs (includes the CUDA context)",
+  "backends": {
+    "pytorch_fp32": [
+      {
+        "batch": 1,
+        "iters": 100,
+        "p50_ms": 0.7309,
+        "p95_ms": 0.7919,
+        "mean_ms": 0.7434,
+        "wafers_per_second": 1368.2,
+        "gpu_memory_used_mib": 1687.0
+      },
+      {
+        "batch": 8,
+        "iters": 100,
+        "p50_ms": 0.7237,
+        "p95_ms": 0.8265,
+        "mean_ms": 0.734,
+        "wafers_per_second": 11054.8,
+        "gpu_memory_used_mib": 1483.0
+      },
+      {
+        "batch": 32,
+        "iters": 100,
+        "p50_ms": 1.5285,
+        "p95_ms": 1.5917,
+        "mean_ms": 1.5065,
+        "wafers_per_second": 20936.2,
+        "gpu_memory_used_mib": 1497.0
+      },
+      {
+        "batch": 128,
+        "iters": 100,
+        "p50_ms": 5.6048,
+        "p95_ms": 5.6667,
+        "mean_ms": 5.588,
+        "wafers_per_second": 22837.5,
+        "gpu_memory_used_mib": 1625.0
+      }
+    ],
+    "pytorch_autocast_fp16": [
+      {
+        "batch": 1,
+        "iters": 100,
+        "p50_ms": 1.1359,
+        "p95_ms": 1.3884,
+        "mean_ms": 1.1824,
+        "wafers_per_second": 880.4,
+        "gpu_memory_used_mib": 1461.0
+      },
+      {
+        "batch": 8,
+        "iters": 100,
+        "p50_ms": 1.0885,
+        "p95_ms": 1.3742,
+        "mean_ms": 1.1348,
+        "wafers_per_second": 7349.4,
+        "gpu_memory_used_mib": 1483.0
+      },
+      {
+        "batch": 32,
+        "iters": 100,
+        "p50_ms": 1.0267,
+        "p95_ms": 1.169,
+        "mean_ms": 1.0497,
+        "wafers_per_second": 31167.7,
+        "gpu_memory_used_mib": 1483.0
+      },
+      {
+        "batch": 128,
+        "iters": 100,
+        "p50_ms": 3.4304,
+        "p95_ms": 3.4863,
+        "mean_ms": 3.3893,
+        "wafers_per_second": 37313.3,
+        "gpu_memory_used_mib": 1547.0
+      }
+    ],
+    "torch_compile_fp32": [
+      {
+        "batch": 1,
+        "iters": 100,
+        "p50_ms": 0.7507,
+        "p95_ms": 1.0974,
+        "mean_ms": 0.7926,
+        "wafers_per_second": 1332.0,
+        "gpu_memory_used_mib": 1481.0
+      },
+      {
+        "batch": 8,
+        "iters": 100,
+        "p50_ms": 0.85,
+        "p95_ms": 1.0738,
+        "mean_ms": 0.8773,
+        "wafers_per_second": 9411.3,
+        "gpu_memory_used_mib": 1483.0
+      },
+      {
+        "batch": 32,
+        "iters": 100,
+        "p50_ms": 1.839,
+        "p95_ms": 1.8931,
+        "mean_ms": 1.7156,
+        "wafers_per_second": 17400.3,
+        "gpu_memory_used_mib": 1483.0
+      },
+      {
+        "batch": 128,
+        "iters": 100,
+        "p50_ms": 4.3232,
+        "p95_ms": 4.4358,
+        "mean_ms": 4.3043,
+        "wafers_per_second": 29607.8,
+        "gpu_memory_used_mib": 1603.0
+      }
+    ],
+    "onnxruntime_cuda_fp32": [
+      {
+        "batch": 1,
+        "iters": 100,
+        "p50_ms": 0.3075,
+        "p95_ms": 0.4838,
+        "mean_ms": 0.331,
+        "wafers_per_second": 3252.3,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 8,
+        "iters": 100,
+        "p50_ms": 0.4464,
+        "p95_ms": 0.4825,
+        "mean_ms": 0.455,
+        "wafers_per_second": 17919.8,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 32,
+        "iters": 100,
+        "p50_ms": 1.5486,
+        "p95_ms": 1.5834,
+        "mean_ms": 1.5476,
+        "wafers_per_second": 20664.0,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 128,
+        "iters": 100,
+        "p50_ms": 5.7235,
+        "p95_ms": 5.7761,
+        "mean_ms": 5.7207,
+        "wafers_per_second": 22363.9,
+        "gpu_memory_used_mib": 1603.0
+      }
+    ],
+    "tensorrt_fp32": [
+      {
+        "batch": 1,
+        "iters": 100,
+        "p50_ms": 0.3117,
+        "p95_ms": 0.3405,
+        "mean_ms": 0.3159,
+        "wafers_per_second": 3207.9,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 8,
+        "iters": 100,
+        "p50_ms": 0.4001,
+        "p95_ms": 0.4272,
+        "mean_ms": 0.406,
+        "wafers_per_second": 19995.1,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 32,
+        "iters": 100,
+        "p50_ms": 1.029,
+        "p95_ms": 1.0576,
+        "mean_ms": 0.9641,
+        "wafers_per_second": 31098.0,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 128,
+        "iters": 100,
+        "p50_ms": 3.9997,
+        "p95_ms": 4.1198,
+        "mean_ms": 3.9359,
+        "wafers_per_second": 32002.2,
+        "gpu_memory_used_mib": 1603.0
+      }
+    ],
+    "tensorrt_fp16": [
+      {
+        "batch": 1,
+        "iters": 100,
+        "p50_ms": 0.1639,
+        "p95_ms": 0.2175,
+        "mean_ms": 0.1765,
+        "wafers_per_second": 6100.2,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 8,
+        "iters": 100,
+        "p50_ms": 0.171,
+        "p95_ms": 0.2252,
+        "mean_ms": 0.1813,
+        "wafers_per_second": 46784.4,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 32,
+        "iters": 100,
+        "p50_ms": 0.3292,
+        "p95_ms": 0.3645,
+        "mean_ms": 0.332,
+        "wafers_per_second": 97192.4,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 128,
+        "iters": 100,
+        "p50_ms": 1.354,
+        "p95_ms": 1.4141,
+        "mean_ms": 1.3013,
+        "wafers_per_second": 94535.8,
+        "gpu_memory_used_mib": 1603.0
+      }
+    ],
+    "tensorrt_int8": [
+      {
+        "batch": 1,
+        "iters": 100,
+        "p50_ms": 0.1403,
+        "p95_ms": 0.2025,
+        "mean_ms": 0.1519,
+        "wafers_per_second": 7128.1,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 8,
+        "iters": 100,
+        "p50_ms": 0.1451,
+        "p95_ms": 0.2032,
+        "mean_ms": 0.1577,
+        "wafers_per_second": 55141.4,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 32,
+        "iters": 100,
+        "p50_ms": 0.2122,
+        "p95_ms": 0.2763,
+        "mean_ms": 0.2235,
+        "wafers_per_second": 150769.9,
+        "gpu_memory_used_mib": 1603.0
+      },
+      {
+        "batch": 128,
+        "iters": 100,
+        "p50_ms": 0.7011,
+        "p95_ms": 0.8483,
+        "mean_ms": 0.7412,
+        "wafers_per_second": 182573.1,
+        "gpu_memory_used_mib": 1603.0
+      }
+    ]
+  },
+  "versions": {
+    "pytorch_fp32": "2.11.0+cu128",
+    "pytorch_autocast_fp16": "2.11.0+cu128",
+    "torch_compile_fp32": "2.11.0+cu128",
+    "onnxruntime_cuda_fp32": "1.22.0",
+    "tensorrt_fp32": "10.16.1.11",
+    "tensorrt_fp16": "10.16.1.11",
+    "tensorrt_int8": "10.16.1.11"
+  }
+}

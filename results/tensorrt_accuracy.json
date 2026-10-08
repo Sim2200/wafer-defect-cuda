@@ -1,0 +1,156 @@
+{
+  "env": {
+    "gpu": "Tesla T4",
+    "driver": "580.178.04\n580.178.04",
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "cudnn": 91900,
+    "onnxruntime": "1.22.0",
+    "tensorrt": "10.16.1.11",
+    "onnx_opset": 17,
+    "python": "3.13.15"
+  },
+  "test_wafers": 34769,
+  "pytorch_fp32_macro_f1": 0.8601,
+  "backends": {
+    "pytorch_fp32": {
+      "macro_f1": 0.8601,
+      "accuracy": 0.9642,
+      "macro_recall": 0.8831,
+      "per_class_recall": {
+        "Center": 0.9412,
+        "Donut": 0.8482,
+        "Edge-Loc": 0.8861,
+        "Edge-Ring": 0.9642,
+        "Loc": 0.7832,
+        "Near-full": 0.9667,
+        "Random": 0.8571,
+        "Scratch": 0.7261,
+        "none": 0.9754
+      },
+      "agreement_with_pytorch": 1.0,
+      "max_abs_logit_diff_vs_pytorch": 0.0,
+      "macro_f1_delta_vs_pytorch": 0.0
+    },
+    "pytorch_autocast_fp16": {
+      "macro_f1": 0.8599,
+      "accuracy": 0.9642,
+      "macro_recall": 0.8827,
+      "per_class_recall": {
+        "Center": 0.9412,
+        "Donut": 0.8482,
+        "Edge-Loc": 0.8861,
+        "Edge-Ring": 0.9642,
+        "Loc": 0.7832,
+        "Near-full": 0.9667,
+        "Random": 0.8571,
+        "Scratch": 0.722,
+        "none": 0.9754
+      },
+      "agreement_with_pytorch": 0.99991,
+      "max_abs_logit_diff_vs_pytorch": 0.04016,
+      "macro_f1_delta_vs_pytorch": -0.0002
+    },
+    "torch_compile_fp32": {
+      "macro_f1": 0.8601,
+      "accuracy": 0.9642,
+      "macro_recall": 0.8831,
+      "per_class_recall": {
+        "Center": 0.9412,
+        "Donut": 0.8482,
+        "Edge-Loc": 0.8861,
+        "Edge-Ring": 0.9642,
+        "Loc": 0.7832,
+        "Near-full": 0.9667,
+        "Random": 0.8571,
+        "Scratch": 0.7261,
+        "none": 0.9754
+      },
+      "agreement_with_pytorch": 1.0,
+      "max_abs_logit_diff_vs_pytorch": 4e-05,
+      "macro_f1_delta_vs_pytorch": 0.0
+    },
+    "onnxruntime_cuda_fp32": {
+      "macro_f1": 0.8601,
+      "accuracy": 0.9642,
+      "macro_recall": 0.8831,
+      "per_class_recall": {
+        "Center": 0.9412,
+        "Donut": 0.8482,
+        "Edge-Loc": 0.8861,
+        "Edge-Ring": 0.9642,
+        "Loc": 0.7832,
+        "Near-full": 0.9667,
+        "Random": 0.8571,
+        "Scratch": 0.7261,
+        "none": 0.9754
+      },
+      "agreement_with_pytorch": 1.0,
+      "max_abs_logit_diff_vs_pytorch": 5e-05,
+      "macro_f1_delta_vs_pytorch": 0.0
+    },
+    "tensorrt_fp32": {
+      "macro_f1": 0.8601,
+      "accuracy": 0.9642,
+      "macro_recall": 0.8831,
+      "per_class_recall": {
+        "Center": 0.9412,
+        "Donut": 0.8482,
+        "Edge-Loc": 0.8861,
+        "Edge-Ring": 0.9642,
+        "Loc": 0.7832,
+        "Near-full": 0.9667,
+        "Random": 0.8571,
+        "Scratch": 0.7261,
+        "none": 0.9754
+      },
+      "agreement_with_pytorch": 1.0,
+      "max_abs_logit_diff_vs_pytorch": 4e-05,
+      "macro_f1_delta_vs_pytorch": 0.0
+    },
+    "tensorrt_fp16": {
+      "macro_f1": 0.86,
+      "accuracy": 0.9642,
+      "macro_recall": 0.8831,
+      "per_class_recall": {
+        "Center": 0.9412,
+        "Donut": 0.8482,
+        "Edge-Loc": 0.8861,
+        "Edge-Ring": 0.9642,
+        "Loc": 0.7832,
+        "Near-full": 0.9667,
+        "Random": 0.8571,
+        "Scratch": 0.7261,
+        "none": 0.9753
+      },
+      "agreement_with_pytorch": 0.99991,
+      "max_abs_logit_diff_vs_pytorch": 0.05139,
+      "macro_f1_delta_vs_pytorch": -0.0001
+    },
+    "tensorrt_int8": {
+      "macro_f1": 0.8618,
+      "accuracy": 0.9643,
+      "macro_recall": 0.8828,
+      "per_class_recall": {
+        "Center": 0.9433,
+        "Donut": 0.8482,
+        "Edge-Loc": 0.8851,
+        "Edge-Ring": 0.9576,
+        "Loc": 0.7819,
+        "Near-full": 0.9667,
+        "Random": 0.852,
+        "Scratch": 0.7344,
+        "none": 0.9759
+      },
+      "agreement_with_pytorch": 0.99698,
+      "max_abs_logit_diff_vs_pytorch": 6.36202,
+      "macro_f1_delta_vs_pytorch": 0.0017
+    }
+  },
+  "int8_calibration": {
+    "algorithm": "IInt8EntropyCalibrator2 (KL divergence)",
+    "wafers": 512,
+    "batch": 32,
+    "source": "train split only"
+  }
+}

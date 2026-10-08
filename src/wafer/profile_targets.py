@@ -24,7 +24,7 @@ def main() -> None:
     ap.add_argument("target", choices=["median", "trt"])
     ap.add_argument("--data", required=True)
     ap.add_argument("--engine", default="")
-    ap.add_argument("--batch", type=int, default=1024)
+    ap.add_argument("--batch", type=int, default=1024, help="the trt target is capped at the engine's largest profile shape (128)")
     ap.add_argument("--iters", type=int, default=50)
     ap.add_argument("--tiled", type=int, default=1)
     ap.add_argument("--torch-profile", default="", help="also record the steady-state loop with torch.profiler (CUPTI) "
@@ -42,7 +42,9 @@ def main() -> None:
         from .trt_bench import trt_runner
 
         trt_run, _ = trt_runner(Path(a.engine))
-        x = standardise(x8[: a.batch]).to(dev).contiguous()
+        # engines are built with an optimisation profile up to batch 128; a larger input would make
+        # set_input_shape fail and the run would silently execute nothing
+        x = standardise(x8[: min(a.batch, 128)]).to(dev).contiguous()
         run = lambda: trt_run(x)  # noqa: E731
 
     for _ in range(10):

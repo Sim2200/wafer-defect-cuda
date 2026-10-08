@@ -168,7 +168,7 @@ def main():
     md = ["# Nsight summary", "", f"GPU {env['gpu']}, driver {env['driver']}, CUDA {env['cuda']}, TensorRT {env['tensorrt']}, "
           f"torch {env['torch']}. Produced on Kaggle by `kaggle/run_trt.py`; trace files are not committed.", ""]
     targets = (("median", [], "Custom median3x3 kernel (tiled), batch 1024, 50 launches"),
-               ("trt", ["--engine", str(WORK / "trt_work" / "wafer_cnn_fp16.plan")], "TensorRT FP16 engine, batch 1024, 50 runs"))
+               ("trt", ["--engine", str(WORK / "trt_work" / "wafer_cnn_fp16.plan")], "TensorRT FP16 engine, batch 128, 50 runs"))
     if shutil.which("nsys"):
         for target, extra, label in targets:
             rep = WORK / f"nsys_{target}"
@@ -200,9 +200,10 @@ def main():
     if shutil.which("ncu"):
         r = sh("ncu", "--set", "default", "-k", "regex:median3x3", "--launch-skip", "10", "--launch-count", "1", PY, "-m",
                "wafer.profile_targets", "median", "--data", data_npz, "--iters", "3", check=False, capture=True)
-        md.append("### Nsight Compute: median3x3_tiled_kernel (one launch)\n\n" + ncu_metrics(r.stdout) + "\n")
-        if r.returncode != 0:
-            md.append("ncu exited non-zero:\n```\n" + (r.stdout + r.stderr)[-800:] + "\n```\n")
+        metrics = ncu_metrics(r.stdout)
+        md.append("### Nsight Compute: median3x3_tiled_kernel (one launch)\n\n" + metrics + "\n")
+        if r.returncode != 0 or metrics == "(no metrics parsed)":
+            md.append("ncu output tail (exit " + str(r.returncode) + "):\n```\n" + (r.stdout + r.stderr)[-1200:] + "\n```\n")
     else:
         md.append("Nsight Compute (`ncu`) is not available on this Kaggle image, so no kernel metrics were collected.\n")
     (RES / "nsight_summary.md").write_text("\n".join(md))
