@@ -70,6 +70,7 @@ def main() -> None:
     ap.add_argument("--out", required=True)
     ap.add_argument("--confusion-png", default="")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--save", default="", help="write the trained weights (state_dict) here, for export")
     a = ap.parse_args()
 
     rank, world, device = setup()
@@ -141,6 +142,8 @@ def main() -> None:
         Path(a.out).write_text(json.dumps(out, indent=2))
         if a.confusion_png:
             save_confusion_png(test["confusion"], a.confusion_png)
+        if a.save:
+            torch.save(core.state_dict(), a.save)
         print("test macro-F1", test["macro_f1"], "accuracy", test["accuracy"], "->", a.out, flush=True)
     if world > 1:
         dist.barrier()

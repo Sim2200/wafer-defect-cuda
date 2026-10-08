@@ -6,8 +6,10 @@
    qingyi/wm811k-wafer-map, polls until it finishes, then downloads /kaggle/working/results/*
    into results/.
 
-    python scripts/run_on_kaggle.py            # push source, run, wait, pull
+    python scripts/run_on_kaggle.py                     # push source, run, wait, pull
     python scripts/run_on_kaggle.py --pull-only
+    python scripts/run_on_kaggle.py --experiment trt    # kaggle/run_trt.py: TensorRT engines + Nsight (1 GPU,
+                                                        # internet on for the tensorrt/onnxruntime-gpu wheels)
 Needs the Kaggle CLI authenticated (~/.kaggle/kaggle.json or ~/.kaggle/access_token).
 """
 
@@ -59,14 +61,21 @@ def push_source(user: str) -> str:
     return slug
 
 
-def push_kernel(user: str, src_slug: str, epochs: int) -> str:
-    kid = f"{user}/wafer-defect-cuda-run"
+EXPERIMENTS = {  # name -> (kernel script, internet needed)
+    "all": ("run_all.py", False),
+    "trt": ("run_trt.py", True),
+}
+
+
+def push_kernel(user: str, src_slug: str, epochs: int, experiment: str = "all") -> str:
+    script, internet = EXPERIMENTS[experiment]
+    kid = f"{user}/wafer-defect-cuda-{experiment}" if experiment != "all" else f"{user}/wafer-defect-cuda-run"
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
-        shutil.copy(ROOT / "kaggle" / "run_all.py", d / "run_all.py")
+        shutil.copy(ROOT / "kaggle" / script, d / script)
         (d / "kernel-metadata.json").write_text(json.dumps({
-            "id": kid, "title": "wafer-defect-cuda-run", "code_file": "run_all.py", "language": "python",
-            "kernel_type": "script", "is_private": True, "enable_gpu": True, "enable_internet": False,
+            "id": kid, "title": kid.split("/")[1], "code_file": script, "language": "python",
+            "kernel_type": "script", "is_private": True, "enable_gpu": True, "enable_internet": internet,
             "dataset_sources": ["qingyi/wm811k-wafer-map", src_slug], "competition_sources": [], "kernel_sources": []}))
         print(kaggle("kernels", "push", "-p", str(d)).strip().splitlines()[-1])
     return kid
@@ -90,7 +99,7 @@ def pull(kid: str) -> None:
     results = ROOT / "results"
     results.mkdir(exist_ok=True)
     for f in out.rglob("*"):
-        if f.suffix in (".json", ".png", ".txt") and f.is_file():
+        if f.suffix in (".json", ".png", ".txt", ".md") and f.is_file():
             shutil.copy(f, results / f.name)
             print("  pulled", f.name)
     log = next(out.glob("*.log"), None)
@@ -113,12 +122,13 @@ def main() -> None:
     ap.add_argument("--pull-only", action="store_true")
     ap.add_argument("--epochs", type=int, default=6)
     ap.add_argument("--user", default="", help="Kaggle username")
+    ap.add_argument("--experiment", default="all", choices=sorted(EXPERIMENTS))
     a = ap.parse_args()
     user = username(a.user or None)
-    kid = f"{user}/wafer-defect-cuda-run"
+    kid = f"{user}/wafer-defect-cuda-{a.experiment}" if a.experiment != "all" else f"{user}/wafer-defect-cuda-run"
     if not a.pull_only:
         slug = push_source(user)
-        kid = push_kernel(user, slug, a.epochs)
+        kid = push_kernel(user, slug, a.epochs, a.experiment)
         status = wait(kid)
         print("final:", status)
     pull(kid)
