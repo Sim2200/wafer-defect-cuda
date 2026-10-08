@@ -87,6 +87,10 @@ def predict_all(run, x: torch.Tensor, batch: int = 128) -> np.ndarray:
 def ort_runner(onnx_path: Path):
     import onnxruntime as ort
 
+    # The pip wheel finds CUDA and cuDNN through the nvidia-* pip packages only if they are loaded
+    # first; without this the CUDA provider silently falls back to the CPU one.
+    if hasattr(ort, "preload_dlls"):
+        ort.preload_dlls()
     sess = ort.InferenceSession(str(onnx_path), providers=["CUDAExecutionProvider"])
     assert "CUDAExecutionProvider" in sess.get_providers(), sess.get_providers()
 
