@@ -50,6 +50,42 @@ def pip(*pkgs):
     sh(PY, "-m", "pip", "install", "-q", *pkgs, check=False)
 
 
+ORT_CUDA12_INDEX = "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/"
+
+
+def ort_cuda_works() -> bool:
+    """Open a one-op model on the CUDA provider in a fresh interpreter (import state is sticky)."""
+    code = (
+        "import onnx, onnxruntime as ort\nfrom onnx import helper, TensorProto\n"
+        "g = helper.make_graph([helper.make_node('Relu', ['x'], ['y'])], 'g', "
+        "[helper.make_tensor_value_info('x', TensorProto.FLOAT, [1, 4])], [helper.make_tensor_value_info('y', TensorProto.FLOAT, [1, 4])])\n"
+        "m = helper.make_model(g, opset_imports=[helper.make_opsetid('', 17)]); m.ir_version = 9; onnx.save(m, '/tmp/relu.onnx')\n"
+        "ort.preload_dlls() if hasattr(ort, 'preload_dlls') else None\n"
+        "s = ort.InferenceSession('/tmp/relu.onnx', providers=['CUDAExecutionProvider'])\n"
+        "print(ort.__version__, s.get_providers())\nassert 'CUDAExecutionProvider' in s.get_providers()"
+    )
+    r = subprocess.run([PY, "-c", code], capture_output=True, text=True)
+    print((r.stdout + r.stderr)[-600:], flush=True)
+    return r.returncode == 0
+
+
+def ensure_ort_cuda():
+    """The default onnxruntime-gpu wheel is built for CUDA 13; this image has CUDA 12.8. The
+    CUDA 12 builds live on ONNX Runtime's own package index, with an older pinned release as
+    the fallback. Each attempt is verified by actually running on the CUDA provider."""
+    attempts = (
+        ["onnxruntime-gpu", "--extra-index-url", ORT_CUDA12_INDEX],
+        ["onnxruntime-gpu==1.22.0"],
+        ["onnxruntime-gpu==1.20.1"],
+    )
+    for spec in attempts:
+        sh(PY, "-m", "pip", "uninstall", "-y", "-q", "onnxruntime-gpu", "onnxruntime", check=False)
+        sh(PY, "-m", "pip", "install", "-q", *spec, check=False)
+        if ort_cuda_works():
+            return
+    raise SystemExit("no onnxruntime-gpu build with a working CUDA provider on this image")
+
+
 def nsys_kernel_summary(report: Path, label: str) -> str:
     """`nsys stats` kernel table for one report as a Markdown table (top 8 kernels by time)."""
     r = subprocess.run(["nsys", "stats", "--report", "cuda_gpu_kern_sum", "--format", "csv", "--force-export=true", str(report)],
@@ -89,7 +125,8 @@ def main():
     # TensorRT and ONNX Runtime GPU come from pip; the Kaggle image has neither. tensorrt-cu12 is the
     # TensorRT 10 line for CUDA 12 (plain "tensorrt" resolves to the CUDA 13 build, which does not
     # support the T4's Turing architecture).
-    pip("tensorrt-cu12", "onnxruntime-gpu", "onnx")
+    pip("tensorrt-cu12", "onnx")
+    ensure_ort_cuda()
     # Nsight Systems is not on the image. Try NVIDIA's CUDA apt repository; if that fails the kernel
     # table comes from torch.profiler (same CUPTI timings) and the summary says so.
     sh("bash", "-c", "set -e; cd /tmp && curl -fsSLo cuda-keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb "
