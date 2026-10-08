@@ -159,6 +159,40 @@ gradients on a model whose steps are short (0.4M parameters, 64x64 inputs). Accu
 run-to-run noise of the single-GPU run; each configuration was trained once (one seed), so the
 0.007 F1 gap is not a finding.
 
+### TensorRT: FP32, FP16 and INT8 engines on one T4 (`results/tensorrt_bench.json`, `results/tensorrt_accuracy.json`)
+
+Trained CNN (0.39M parameters) exported to ONNX opset 17, then compiled to TensorRT 10.16 engines for FP32, FP16, and INT8 quantization. INT8 used IInt8EntropyCalibrator2 (entropy calibration via KL divergence) on 512 training wafers, calibration data from train split only. Inputs resident on GPU, 20 warm-up and 100 timed iterations per point, p50 and p95 latency measured on host. Versions: PyTorch 2.11.0+cu128, CUDA 12.8, ONNX Runtime 1.22.0, TensorRT 10.16.1.11, driver 580.178.04.
+
+**Table A: Latency (p50 / p95 ms) and throughput at batch 128**
+
+| Backend | Batch 1 | Batch 8 | Batch 32 | Batch 128 | Wafers/s at 128 |
+|---|---|---|---|---|---|
+| PyTorch eager fp32 | 0.731 / 0.792 | 0.724 / 0.827 | 1.529 / 1.592 | 5.605 / 5.667 | 22,837 |
+| PyTorch autocast fp16 | 1.136 / 1.388 | 1.089 / 1.374 | 1.027 / 1.169 | 3.430 / 3.486 | 37,313 |
+| torch.compile fp32 | 0.751 / 1.097 | 0.850 / 1.074 | 1.839 / 1.893 | 4.323 / 4.436 | 29,608 |
+| ONNX Runtime CUDA fp32 | 0.308 / 0.484 | 0.446 / 0.483 | 1.549 / 1.583 | 5.724 / 5.776 | 22,364 |
+| TensorRT fp32 | 0.312 / 0.341 | 0.400 / 0.427 | 1.029 / 1.058 | 3.999 / 4.120 | 32,002 |
+| TensorRT fp16 | 0.164 / 0.218 | 0.171 / 0.225 | 0.329 / 0.365 | 1.354 / 1.414 | 94,536 |
+| TensorRT int8 | **0.140** / 0.203 | **0.145** / 0.203 | **0.212** / 0.276 | **0.701** / 0.848 | 182,573 |
+
+**Table B: Accuracy and logit distance**
+
+| Backend | Test macro-F1 | Delta vs PyTorch | Agreement with PyTorch (top-1) | Max abs logit difference |
+|---|---|---|---|---|
+| PyTorch eager fp32 | 0.8601 | 0.0000 | 1.0000 | 0.0 |
+| PyTorch autocast fp16 | 0.8599 | -0.0002 | 0.9999 | 0.04016 |
+| torch.compile fp32 | 0.8601 | 0.0000 | 1.0000 | 0.00004 |
+| ONNX Runtime CUDA fp32 | 0.8601 | 0.0000 | 1.0000 | 0.00005 |
+| TensorRT fp32 | 0.8601 | 0.0000 | 1.0000 | 0.00004 |
+| TensorRT fp16 | 0.8600 | -0.0001 | 0.9999 | 0.05139 |
+| TensorRT int8 | 0.8618 | 0.0017 | 0.9970 | 6.36202 |
+
+Engine build times and sizes: FP32 4.4 seconds and 1.9 MB; FP16 8.1 seconds and 0.87 MB; INT8 18.0 seconds and 0.47 MB. INT8 calibration used IInt8EntropyCalibrator2 with 512 train wafers, batch 32, on train split only.
+
+Did INT8 help on a 0.39M-parameter model at 64x64? At batch 32, TensorRT INT8 runs 1.6x faster than FP16 and 7.2x faster than PyTorch eager, reaching 150,770 wafers/s. At batch 128, INT8 is 1.9x faster than FP16 and 8.0x faster than PyTorch eager, reaching 182,573 wafers/s. At batch 1, launch overhead dominates: INT8 at 0.140 ms vs FP16 at 0.164 ms is a modest 17% gap. Accuracy: INT8 macro-F1 0.8618 vs PyTorch FP32 0.8601, a delta of 0.0017 well within run-to-run noise; top-1 agreement 99.70%. FP16 macro-F1 is 0.8600. GPU memory usage is flat across engines at about 1.6 GiB, dominated by the CUDA context. torch.compile was not faster than eager in this run at batches 1, 8 and 32 (0.731 ms vs 0.751 ms at batch 1, 1.529 ms vs 1.839 ms at batch 32), faster only at batch 128 (5.605 ms vs 4.323 ms).
+
+Nsight Systems profiling of the custom median3x3_tiled kernel on 1,024 wafers shows 60 launches at 501.5 microseconds average. TensorRT FP16 profiling in this run captured only an offsets kernel at 3 microseconds average because the batch size exceeded the engine's profiling target. Nsight Compute metrics did not parse in this run. Both profiles are being re-run.
+
 ## Limitations
 
 - Tesla T4s (Turing, 2018), not A100/H100; one node; no NVLink. Scaling across nodes is untested.
@@ -167,7 +201,7 @@ run-to-run noise of the single-GPU run; each configuration was trained once (one
 - 85% "none" is the dataset's reality; balanced sampling changes the training distribution, not
   the test set, and the reported "none" precision/recall reflect that trade.
 - The preprocess speedup includes PyTorch-side Python overhead; the conv comparison shows the
-  custom kernels lose to cuDNN, and tiling did not help at 3x3 / 64x64. No Nsight profile yet.
+  custom kernels lose to cuDNN, and tiling did not help at 3x3 / 64x64. The Nsight Systems trace of the median kernel is in; the TensorRT trace and the Nsight Compute metrics are pending a re-run (see the TensorRT section).
 
 ## Running it
 
@@ -176,6 +210,8 @@ make setup && make test                  # CPU unit tests (CUDA parity tests ski
 python scripts/run_on_kaggle.py --user <kaggle-username> --epochs 6
 # pushes src/ kernels/ tests/ as a private Kaggle dataset, runs kaggle/run_all.py on 2x T4,
 # waits, and pulls results/*.json, confusion_matrix.png and cuda_tests.txt back (about 6 minutes)
+python scripts/run_on_kaggle.py --user <kaggle-username> --experiment trt
+# builds and benchmarks TensorRT FP32, FP16 and INT8 engines on one T4
 ```
 
 Needs a Kaggle account with phone verification (for GPUs) and the Kaggle CLI authenticated
@@ -188,8 +224,10 @@ same steps run locally: `python -m wafer.bench_kernels ...`, `python -m wafer.tr
 ```
 src/wafer/     data.py (load, lot-grouped split) · reference.py (PyTorch references) · kernels.py (extension wrapper)
                model.py · sampler.py (DistributedBalancedSampler) · train.py (DDP, AMP) · bench_kernels.py · metrics.py
+               trt_bench.py · profile_targets.py
 kernels/       wafer_ops.cu (preprocess, conv3x3 naive/tiled, median3x3 naive/tiled)
-kaggle/        run_all.py (the whole experiment on one kernel)      scripts/run_on_kaggle.py (push, poll, pull)
+kaggle/        run_all.py (the whole experiment on one kernel) · run_trt.py
+               scripts/run_on_kaggle.py (push, poll, pull)
 tests/         CPU tests (23) + CUDA parity tests (5, run on Kaggle)
 results/       data_summary · kernels · metrics · run_1gpu · run_2gpu · ddp_scaling · env · cuda_tests.txt · confusion_matrix.png
 ```
