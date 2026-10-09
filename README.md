@@ -193,6 +193,56 @@ Did INT8 help on a 0.39M-parameter model at 64x64? At batch 32, TensorRT INT8 ru
 
 Nsight Systems profiling of the custom median3x3_tiled kernel on 1,024 wafers shows 60 launches at 501.5 microseconds average. TensorRT FP16 profiling in this run captured only an offsets kernel at 3 microseconds average because the batch size exceeded the engine's profiling target. Nsight Compute metrics did not parse in this run. Both profiles are being re-run.
 
+### Diffusion for rare classes: did synthetic wafers help? (`results/diffusion_*.json`)
+
+Class-conditional DDPM trained with HF diffusers UNet2DModel (25,304,961 parameters, channels [64, 128, 256, 256], 1000 timesteps, squaredcos_cap_v2 schedule, 0.999 EMA) on the lot-grouped train split only, on the eight defect classes (17,790 train wafers, 60 epochs, 80.05 minutes total on 2x T4 with DDP). Sampling: 2,000 wafers per rare class (Near-full, Donut, Random, Scratch) with DDIM 50 steps at 5.9 wafers/s. Pixels scaled to [-1, 1] and rounded back to the three levels.
+
+**Are the samples copies? (median nearest-neighbour distance to train set, fraction differing pixels)**
+
+| Class | Train | Generated | Median distance generated | Median distance real test | Threshold | Near-copy % (generated) | Near-copy % (real test) |
+|---|---|---|---|---|---|---|---|
+| Near-full | 101 | 2,000 | 0.099 | 0.0884 | 0.0000 | 0.0 | 6.7 |
+| Donut | 397 | 2,000 | 0.1526 | 0.1428 | 0.0796 | 20.1 | 1.79 |
+| Random | 556 | 2,000 | 0.2471 | 0.2677 | 0.0000 | 0.0 | 2.04 |
+| Scratch | 846 | 2,000 | 0.1361 | 0.0769 | 0.0007 | 0.0 | 1.24 |
+
+Generated wafers sit about as far from the train set as unseen real wafers do, so the model is not memorising. Note Donut's 20.1% near copies against a loose threshold (0.0796) and that 6.7% of Near-full test wafers are exact duplicates of train wafers (threshold 0.0000), a property of the dataset.
+
+**Sample quality (feature-FID on the classifier's 256-d penultimate features, lower is better)**
+
+| Class | Generated vs real test | Real train vs real test | Generated vs real train | Fail-pixel share (real train) | Fail-pixel share (generated) |
+|---|---|---|---|---|---|
+| Near-full | 46.261 | 6.121 | 50.955 | 0.6818 | 0.5034 |
+| Donut | 20.65 | 8.915 | 26.119 | 0.2166 | 0.2316 |
+| Random | 15.831 | 5.028 | 22.386 | 0.3764 | 0.3235 |
+| Scratch | 49.381 | 10.157 | 72.566 | 0.0771 | 0.1709 |
+
+FID of generated samples is 2 to 8x the real-train-vs-test floor. Scratch samples have 2.2x the fail-pixel density of real scratches (0.1709 vs 0.0771); Near-full samples have too few fail pixels (0.5034 vs 0.6818).
+
+**Step count (256 per class): DDPM vs DDIM trade-off**
+
+| Schedule | Steps | Wafers / s | FID: Near-full | FID: Donut | FID: Random | FID: Scratch |
+|---|---|---|---|---|---|---|
+| DDPM | 1000 | 0.3 | 18.357 | 25.474 | 18.113 | 45.706 |
+| DDIM | 50 | 5.87 | 49.065 | 16.964 | 14.509 | 54.773 |
+| DDIM | 10 | 28.1 | 155.343 | 20.733 | 51.47 | 37.383 |
+
+DDPM 1000 is 20x slower than DDIM 50 and only better for Near-full. DDIM 10 is 4.8x faster than DDIM 50 and much worse for Near-full (155.343 vs 49.065) and Random (51.47 vs 14.509).
+
+**Classifier experiment (same recipe, 6 epochs, 3 seeds, mean ± std)**
+
+| Condition | Test macro-F1 | Accuracy | Recall: Near-full | Recall: Donut | Recall: Random | Recall: Scratch | Synthetic wafers |
+|---|---|---|---|---|---|---|---|
+| Baseline | 0.8597 ± 0.0008 | 0.9643 ± 0.0003 | 0.9667 ± 0.0000 | 0.8661 ± 0.0146 | 0.8895 ± 0.0237 | 0.6749 ± 0.0393 | 0 |
+| Flips | 0.8231 ± 0.0036 | 0.9441 ± 0.0019 | 0.9889 ± 0.0157 | 0.9494 ± 0.0111 | 0.9252 ± 0.0064 | 0.8949 ± 0.0052 | 0 |
+| Oversample x4 | 0.8581 ± 0.0049 | 0.9651 ± 0.0012 | 0.9667 ± 0.0272 | 0.8541 ± 0.0256 | 0.8895 ± 0.0210 | 0.6459 ± 0.0128 | 0 |
+| Synthetic 500 | 0.8201 ± 0.0029 | 0.9617 ± 0.0011 | 0.8778 ± 0.0157 | 0.875 ± 0.0073 | 0.8622 ± 0.0083 | 0.6432 ± 0.0034 | 2,000 |
+| Synthetic 2000 | 0.7737 ± 0.0041 | 0.9542 ± 0.0014 | 0.8222 ± 0.0314 | 0.8899 ± 0.0367 | 0.8571 ± 0.0110 | 0.6943 ± 0.0249 | 8,000 |
+
+Adding synthetic wafers lowered macro-F1 from 0.8597 (baseline) to 0.8201 with 500 per class and 0.7737 with 2,000, well outside the seed spread (baseline std 0.0008 vs effects of 0.04 to 0.09 macro-F1 points). The samples look plausible but shift the class boundaries, consistent with the FID gap and the fail-pixel mismatch. Oversampling did nothing (0.8581 vs 0.8597). Flips raised rare-class recall substantially (Scratch 0.6749 to 0.8949, Donut 0.8661 to 0.9494, Near-full 0.9667 to 0.9889) but lowered macro-F1 to 0.8231 because precision fell: more real wafers of other classes were pulled into the rare classes. With this generator and this classifier recipe, synthetic data is not a substitute for real rare wafers. Next experiments: train the DDPM longer or only on rare classes, filter samples by the classifier's confidence or by FID, mix a smaller share, or tune flips with a precision constraint.
+
+![Diffusion samples: real on the left, generated on the right, 8 each per class](results/figures/diffusion_grid.png)
+
 ## Limitations
 
 - Tesla T4s (Turing, 2018), not A100/H100; one node; no NVLink. Scaling across nodes is untested.
@@ -202,6 +252,7 @@ Nsight Systems profiling of the custom median3x3_tiled kernel on 1,024 wafers sh
   the test set, and the reported "none" precision/recall reflect that trade.
 - The preprocess speedup includes PyTorch-side Python overhead; the conv comparison shows the
   custom kernels lose to cuDNN, and tiling did not help at 3x3 / 64x64. The Nsight Systems trace of the median kernel is in; the TensorRT trace and the Nsight Compute metrics are pending a re-run (see the TensorRT section).
+- The generator was trained once (60 epochs, one seed) and judged by one classifier recipe; the negative result is for this setup.
 
 ## Running it
 
@@ -212,6 +263,9 @@ python scripts/run_on_kaggle.py --user <kaggle-username> --epochs 6
 # waits, and pulls results/*.json, confusion_matrix.png and cuda_tests.txt back (about 6 minutes)
 python scripts/run_on_kaggle.py --user <kaggle-username> --experiment trt
 # builds and benchmarks TensorRT FP32, FP16 and INT8 engines on one T4
+python scripts/run_on_kaggle.py --user <kaggle-username> --experiment diffusion
+# 2x T4, about 3 GPU-hours; a finished run's checkpoint and samples can be re-attached as the
+# dataset wafer-defect-cuda-ddpm to redo only the evaluation, see `--push-ddpm`.
 ```
 
 Needs a Kaggle account with phone verification (for GPUs) and the Kaggle CLI authenticated
@@ -224,12 +278,13 @@ same steps run locally: `python -m wafer.bench_kernels ...`, `python -m wafer.tr
 ```
 src/wafer/     data.py (load, lot-grouped split) · reference.py (PyTorch references) · kernels.py (extension wrapper)
                model.py · sampler.py (DistributedBalancedSampler) · train.py (DDP, AMP) · bench_kernels.py · metrics.py
-               trt_bench.py · profile_targets.py
-kernels/       wafer_ops.cu (preprocess, conv3x3 naive/tiled, median3x3 naive/tiled)
-kaggle/        run_all.py (the whole experiment on one kernel) · run_trt.py
+               trt_bench.py · profile_targets.py · diffusion.py · synth.py
+kaggle/        run_all.py (the whole experiment on one kernel) · run_trt.py · run_diffusion.py
                scripts/run_on_kaggle.py (push, poll, pull)
 tests/         CPU tests (23) + CUDA parity tests (5, run on Kaggle)
+               test_synth.py · test_train_options.py
 results/       data_summary · kernels · metrics · run_1gpu · run_2gpu · ddp_scaling · env · cuda_tests.txt · confusion_matrix.png
+               diffusion_train · diffusion_samples · diffusion_experiment · figures/diffusion_grid.png
 ```
 
 ## Author
