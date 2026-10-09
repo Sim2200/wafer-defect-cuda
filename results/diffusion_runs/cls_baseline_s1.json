@@ -1,0 +1,254 @@
+{
+  "model": "cnn",
+  "world_size": 1,
+  "device": "Tesla T4",
+  "epochs": 6,
+  "batch_per_rank": 256,
+  "global_batch": 256,
+  "lr": 0.002,
+  "params": 390633,
+  "sampler": "DistributedBalancedSampler (inverse-frequency)",
+  "train_counts": {
+    "Center": 2952,
+    "Donut": 397,
+    "Edge-Loc": 3660,
+    "Edge-Ring": 6799,
+    "Loc": 2479,
+    "Near-full": 101,
+    "Random": 556,
+    "Scratch": 846,
+    "none": 103086
+  },
+  "test_counts": {
+    "Center": 935,
+    "Donut": 112,
+    "Edge-Loc": 1027,
+    "Edge-Ring": 1956,
+    "Loc": 752,
+    "Near-full": 30,
+    "Random": 196,
+    "Scratch": 241,
+    "none": 29520
+  },
+  "total_train_seconds": 77.7,
+  "per_epoch": [
+    {
+      "epoch": 0,
+      "epoch_seconds": 12.25,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 9862.3,
+      "train_loss": 0.7199,
+      "val_macro_f1": 0.5224,
+      "val_accuracy": 0.1091
+    },
+    {
+      "epoch": 1,
+      "epoch_seconds": 11.81,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 10235.3,
+      "train_loss": 0.2112,
+      "val_macro_f1": 0.5505,
+      "val_accuracy": 0.5076
+    },
+    {
+      "epoch": 2,
+      "epoch_seconds": 11.97,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 10095.1,
+      "train_loss": 0.105,
+      "val_macro_f1": 0.6447,
+      "val_accuracy": 0.8972
+    },
+    {
+      "epoch": 3,
+      "epoch_seconds": 12.08,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 10003.7,
+      "train_loss": 0.0543,
+      "val_macro_f1": 0.813,
+      "val_accuracy": 0.9579
+    },
+    {
+      "epoch": 4,
+      "epoch_seconds": 12.18,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 9922.2,
+      "train_loss": 0.0266,
+      "val_macro_f1": 0.8425,
+      "val_accuracy": 0.9607
+    },
+    {
+      "epoch": 5,
+      "epoch_seconds": 12.28,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 9839.7,
+      "train_loss": 0.0159,
+      "val_macro_f1": 0.8648,
+      "val_accuracy": 0.9678
+    }
+  ],
+  "mean_wafers_per_second": 10019.2,
+  "test": {
+    "accuracy": 0.9647,
+    "macro_f1": 0.8604,
+    "macro_recall": 0.8764,
+    "per_class": {
+      "Center": {
+        "support": 935,
+        "precision": 0.8927,
+        "recall": 0.9348,
+        "f1": 0.9133
+      },
+      "Donut": {
+        "support": 112,
+        "precision": 0.8509,
+        "recall": 0.8661,
+        "f1": 0.8584
+      },
+      "Edge-Loc": {
+        "support": 1027,
+        "precision": 0.6954,
+        "recall": 0.887,
+        "f1": 0.7796
+      },
+      "Edge-Ring": {
+        "support": 1956,
+        "precision": 0.9695,
+        "recall": 0.9601,
+        "f1": 0.9648
+      },
+      "Loc": {
+        "support": 752,
+        "precision": 0.6549,
+        "recall": 0.7673,
+        "f1": 0.7067
+      },
+      "Near-full": {
+        "support": 30,
+        "precision": 0.9667,
+        "recall": 0.9667,
+        "f1": 0.9667
+      },
+      "Random": {
+        "support": 196,
+        "precision": 0.9026,
+        "recall": 0.898,
+        "f1": 0.9003
+      },
+      "Scratch": {
+        "support": 241,
+        "precision": 0.7136,
+        "recall": 0.6307,
+        "f1": 0.6696
+      },
+      "none": {
+        "support": 29520,
+        "precision": 0.991,
+        "recall": 0.9772,
+        "f1": 0.9841
+      }
+    },
+    "confusion": [
+      [
+        874,
+        4,
+        3,
+        0,
+        16,
+        0,
+        1,
+        0,
+        37
+      ],
+      [
+        1,
+        97,
+        1,
+        1,
+        7,
+        0,
+        3,
+        1,
+        1
+      ],
+      [
+        4,
+        0,
+        911,
+        16,
+        28,
+        0,
+        3,
+        2,
+        63
+      ],
+      [
+        0,
+        0,
+        41,
+        1878,
+        0,
+        0,
+        1,
+        1,
+        35
+      ],
+      [
+        25,
+        10,
+        50,
+        0,
+        577,
+        0,
+        1,
+        13,
+        76
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        29,
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        9,
+        0,
+        4,
+        1,
+        176,
+        0,
+        4
+      ],
+      [
+        2,
+        2,
+        7,
+        2,
+        30,
+        0,
+        0,
+        152,
+        46
+      ],
+      [
+        72,
+        0,
+        288,
+        40,
+        219,
+        0,
+        9,
+        44,
+        28848
+      ]
+    ]
+  },
+  "augment": "none"
+}

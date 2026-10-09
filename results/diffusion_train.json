@@ -1,0 +1,344 @@
+{
+  "model": "UNet2DModel class-conditional DDPM",
+  "params": 25304961,
+  "channels": [
+    64,
+    128,
+    256,
+    256
+  ],
+  "layers_per_block": 2,
+  "timesteps": 1000,
+  "beta_schedule": "squaredcos_cap_v2",
+  "prediction": "epsilon",
+  "ema_decay": 0.999,
+  "lr": 0.0002,
+  "batch_per_rank": 128,
+  "world_size": 2,
+  "epochs": 60,
+  "classes_trained_on": [
+    "Center",
+    "Donut",
+    "Edge-Loc",
+    "Edge-Ring",
+    "Loc",
+    "Near-full",
+    "Random",
+    "Scratch"
+  ],
+  "train_wafers": 17790,
+  "train_counts": {
+    "Center": 2952,
+    "Donut": 397,
+    "Edge-Loc": 3660,
+    "Edge-Ring": 6799,
+    "Loc": 2479,
+    "Near-full": 101,
+    "Random": 556,
+    "Scratch": 846
+  },
+  "total_train_seconds": 4803.1,
+  "per_epoch": [
+    {
+      "epoch": 0,
+      "loss": 0.23009,
+      "epoch_seconds": 73.7
+    },
+    {
+      "epoch": 1,
+      "loss": 0.12648,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 2,
+      "loss": 0.09808,
+      "epoch_seconds": 79.4
+    },
+    {
+      "epoch": 3,
+      "loss": 0.08121,
+      "epoch_seconds": 79.4
+    },
+    {
+      "epoch": 4,
+      "loss": 0.07155,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 5,
+      "loss": 0.06727,
+      "epoch_seconds": 79.7
+    },
+    {
+      "epoch": 6,
+      "loss": 0.06344,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 7,
+      "loss": 0.05792,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 8,
+      "loss": 0.05239,
+      "epoch_seconds": 79.1
+    },
+    {
+      "epoch": 9,
+      "loss": 0.04875,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 10,
+      "loss": 0.04432,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 11,
+      "loss": 0.04156,
+      "epoch_seconds": 79.7
+    },
+    {
+      "epoch": 12,
+      "loss": 0.04052,
+      "epoch_seconds": 79.9
+    },
+    {
+      "epoch": 13,
+      "loss": 0.03884,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 14,
+      "loss": 0.03624,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 15,
+      "loss": 0.03516,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 16,
+      "loss": 0.03479,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 17,
+      "loss": 0.03354,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 18,
+      "loss": 0.03332,
+      "epoch_seconds": 79.7
+    },
+    {
+      "epoch": 19,
+      "loss": 0.03321,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 20,
+      "loss": 0.03143,
+      "epoch_seconds": 79.2
+    },
+    {
+      "epoch": 21,
+      "loss": 0.03074,
+      "epoch_seconds": 79.3
+    },
+    {
+      "epoch": 22,
+      "loss": 0.03086,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 23,
+      "loss": 0.0301,
+      "epoch_seconds": 79.9
+    },
+    {
+      "epoch": 24,
+      "loss": 0.031,
+      "epoch_seconds": 79.9
+    },
+    {
+      "epoch": 25,
+      "loss": 0.02974,
+      "epoch_seconds": 79.2
+    },
+    {
+      "epoch": 26,
+      "loss": 0.02903,
+      "epoch_seconds": 79.4
+    },
+    {
+      "epoch": 27,
+      "loss": 0.02896,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 28,
+      "loss": 0.02995,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 29,
+      "loss": 0.0288,
+      "epoch_seconds": 80.1
+    },
+    {
+      "epoch": 30,
+      "loss": 0.02888,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 31,
+      "loss": 0.02868,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 32,
+      "loss": 0.0276,
+      "epoch_seconds": 79.4
+    },
+    {
+      "epoch": 33,
+      "loss": 0.02828,
+      "epoch_seconds": 79.3
+    },
+    {
+      "epoch": 34,
+      "loss": 0.02743,
+      "epoch_seconds": 81.7
+    },
+    {
+      "epoch": 35,
+      "loss": 0.02795,
+      "epoch_seconds": 79.7
+    },
+    {
+      "epoch": 36,
+      "loss": 0.02786,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 37,
+      "loss": 0.02641,
+      "epoch_seconds": 79.1
+    },
+    {
+      "epoch": 38,
+      "loss": 0.0277,
+      "epoch_seconds": 79.4
+    },
+    {
+      "epoch": 39,
+      "loss": 0.02658,
+      "epoch_seconds": 79.8
+    },
+    {
+      "epoch": 40,
+      "loss": 0.02727,
+      "epoch_seconds": 79.4
+    },
+    {
+      "epoch": 41,
+      "loss": 0.02614,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 42,
+      "loss": 0.0262,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 43,
+      "loss": 0.0261,
+      "epoch_seconds": 79.7
+    },
+    {
+      "epoch": 44,
+      "loss": 0.02576,
+      "epoch_seconds": 79.2
+    },
+    {
+      "epoch": 45,
+      "loss": 0.02558,
+      "epoch_seconds": 79.0
+    },
+    {
+      "epoch": 46,
+      "loss": 0.02586,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 47,
+      "loss": 0.02566,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 48,
+      "loss": 0.02547,
+      "epoch_seconds": 78.8
+    },
+    {
+      "epoch": 49,
+      "loss": 0.02512,
+      "epoch_seconds": 79.6
+    },
+    {
+      "epoch": 50,
+      "loss": 0.02533,
+      "epoch_seconds": 78.8
+    },
+    {
+      "epoch": 51,
+      "loss": 0.02493,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 52,
+      "loss": 0.02546,
+      "epoch_seconds": 79.4
+    },
+    {
+      "epoch": 53,
+      "loss": 0.02519,
+      "epoch_seconds": 79.4
+    },
+    {
+      "epoch": 54,
+      "loss": 0.02491,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 55,
+      "loss": 0.0242,
+      "epoch_seconds": 79.7
+    },
+    {
+      "epoch": 56,
+      "loss": 0.02493,
+      "epoch_seconds": 79.1
+    },
+    {
+      "epoch": 57,
+      "loss": 0.0243,
+      "epoch_seconds": 79.3
+    },
+    {
+      "epoch": 58,
+      "loss": 0.02484,
+      "epoch_seconds": 79.5
+    },
+    {
+      "epoch": 59,
+      "loss": 0.02396,
+      "epoch_seconds": 79.7
+    }
+  ],
+  "device": "Tesla T4"
+}

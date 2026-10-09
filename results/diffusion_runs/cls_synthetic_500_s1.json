@@ -1,0 +1,267 @@
+{
+  "model": "cnn",
+  "world_size": 1,
+  "device": "Tesla T4",
+  "epochs": 6,
+  "batch_per_rank": 256,
+  "global_batch": 256,
+  "lr": 0.002,
+  "params": 390633,
+  "sampler": "DistributedBalancedSampler (inverse-frequency)",
+  "train_counts": {
+    "Center": 2952,
+    "Donut": 397,
+    "Edge-Loc": 3660,
+    "Edge-Ring": 6799,
+    "Loc": 2479,
+    "Near-full": 101,
+    "Random": 556,
+    "Scratch": 846,
+    "none": 103086
+  },
+  "test_counts": {
+    "Center": 935,
+    "Donut": 112,
+    "Edge-Loc": 1027,
+    "Edge-Ring": 1956,
+    "Loc": 752,
+    "Near-full": 30,
+    "Random": 196,
+    "Scratch": 241,
+    "none": 29520
+  },
+  "total_train_seconds": 79.8,
+  "per_epoch": [
+    {
+      "epoch": 0,
+      "epoch_seconds": 12.82,
+      "wafers_seen_all_ranks": 122624,
+      "wafers_per_second": 9563.6,
+      "train_loss": 0.8631,
+      "val_macro_f1": 0.4546,
+      "val_accuracy": 0.8567
+    },
+    {
+      "epoch": 1,
+      "epoch_seconds": 12.33,
+      "wafers_seen_all_ranks": 122624,
+      "wafers_per_second": 9943.5,
+      "train_loss": 0.2991,
+      "val_macro_f1": 0.4205,
+      "val_accuracy": 0.1936
+    },
+    {
+      "epoch": 2,
+      "epoch_seconds": 12.43,
+      "wafers_seen_all_ranks": 122624,
+      "wafers_per_second": 9866.4,
+      "train_loss": 0.1365,
+      "val_macro_f1": 0.566,
+      "val_accuracy": 0.819
+    },
+    {
+      "epoch": 3,
+      "epoch_seconds": 12.45,
+      "wafers_seen_all_ranks": 122624,
+      "wafers_per_second": 9852.5,
+      "train_loss": 0.0641,
+      "val_macro_f1": 0.5009,
+      "val_accuracy": 0.1157
+    },
+    {
+      "epoch": 4,
+      "epoch_seconds": 12.37,
+      "wafers_seen_all_ranks": 122624,
+      "wafers_per_second": 9909.8,
+      "train_loss": 0.0291,
+      "val_macro_f1": 0.7535,
+      "val_accuracy": 0.9292
+    },
+    {
+      "epoch": 5,
+      "epoch_seconds": 12.32,
+      "wafers_seen_all_ranks": 122624,
+      "wafers_per_second": 9955.3,
+      "train_loss": 0.0194,
+      "val_macro_f1": 0.8203,
+      "val_accuracy": 0.9663
+    }
+  ],
+  "mean_wafers_per_second": 9905.5,
+  "test": {
+    "accuracy": 0.9633,
+    "macro_f1": 0.8193,
+    "macro_recall": 0.8517,
+    "per_class": {
+      "Center": {
+        "support": 935,
+        "precision": 0.9025,
+        "recall": 0.9305,
+        "f1": 0.9163
+      },
+      "Donut": {
+        "support": 112,
+        "precision": 0.7132,
+        "recall": 0.8661,
+        "f1": 0.7823
+      },
+      "Edge-Loc": {
+        "support": 1027,
+        "precision": 0.704,
+        "recall": 0.8637,
+        "f1": 0.7757
+      },
+      "Edge-Ring": {
+        "support": 1956,
+        "precision": 0.9724,
+        "recall": 0.956,
+        "f1": 0.9642
+      },
+      "Loc": {
+        "support": 752,
+        "precision": 0.67,
+        "recall": 0.7048,
+        "f1": 0.687
+      },
+      "Near-full": {
+        "support": 30,
+        "precision": 0.7879,
+        "recall": 0.8667,
+        "f1": 0.8254
+      },
+      "Random": {
+        "support": 196,
+        "precision": 0.8308,
+        "recall": 0.852,
+        "f1": 0.8413
+      },
+      "Scratch": {
+        "support": 241,
+        "precision": 0.5552,
+        "recall": 0.6473,
+        "f1": 0.5977
+      },
+      "none": {
+        "support": 29520,
+        "precision": 0.9901,
+        "recall": 0.9787,
+        "f1": 0.9843
+      }
+    },
+    "confusion": [
+      [
+        870,
+        4,
+        3,
+        0,
+        14,
+        0,
+        3,
+        2,
+        39
+      ],
+      [
+        1,
+        97,
+        1,
+        0,
+        6,
+        1,
+        2,
+        3,
+        1
+      ],
+      [
+        6,
+        0,
+        887,
+        11,
+        37,
+        1,
+        5,
+        5,
+        75
+      ],
+      [
+        0,
+        0,
+        49,
+        1870,
+        0,
+        0,
+        0,
+        1,
+        36
+      ],
+      [
+        21,
+        25,
+        52,
+        0,
+        530,
+        1,
+        2,
+        33,
+        88
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        26,
+        3,
+        1,
+        0
+      ],
+      [
+        3,
+        2,
+        10,
+        1,
+        5,
+        2,
+        167,
+        4,
+        2
+      ],
+      [
+        2,
+        1,
+        5,
+        1,
+        27,
+        0,
+        0,
+        156,
+        49
+      ],
+      [
+        61,
+        7,
+        253,
+        40,
+        172,
+        2,
+        19,
+        76,
+        28890
+      ]
+    ]
+  },
+  "augment": "none",
+  "synthetic_path": "/kaggle/working/synth_500.npz",
+  "synthetic_wafers": 2000,
+  "synthetic_counts": {
+    "Center": 0,
+    "Donut": 500,
+    "Edge-Loc": 0,
+    "Edge-Ring": 0,
+    "Loc": 0,
+    "Near-full": 500,
+    "Random": 500,
+    "Scratch": 500,
+    "none": 0
+  }
+}

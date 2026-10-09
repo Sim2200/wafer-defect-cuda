@@ -1,0 +1,254 @@
+{
+  "model": "cnn",
+  "world_size": 1,
+  "device": "Tesla T4",
+  "epochs": 6,
+  "batch_per_rank": 256,
+  "global_batch": 256,
+  "lr": 0.002,
+  "params": 390633,
+  "sampler": "DistributedBalancedSampler (inverse-frequency)",
+  "train_counts": {
+    "Center": 2952,
+    "Donut": 397,
+    "Edge-Loc": 3660,
+    "Edge-Ring": 6799,
+    "Loc": 2479,
+    "Near-full": 101,
+    "Random": 556,
+    "Scratch": 846,
+    "none": 103086
+  },
+  "test_counts": {
+    "Center": 935,
+    "Donut": 112,
+    "Edge-Loc": 1027,
+    "Edge-Ring": 1956,
+    "Loc": 752,
+    "Near-full": 30,
+    "Random": 196,
+    "Scratch": 241,
+    "none": 29520
+  },
+  "total_train_seconds": 136.6,
+  "per_epoch": [
+    {
+      "epoch": 0,
+      "epoch_seconds": 22.61,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 5344.8,
+      "train_loss": 0.7889,
+      "val_macro_f1": 0.4067,
+      "val_accuracy": 0.228
+    },
+    {
+      "epoch": 1,
+      "epoch_seconds": 22.0,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 5492.2,
+      "train_loss": 0.3172,
+      "val_macro_f1": 0.4698,
+      "val_accuracy": 0.0962
+    },
+    {
+      "epoch": 2,
+      "epoch_seconds": 21.95,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 5505.3,
+      "train_loss": 0.2352,
+      "val_macro_f1": 0.6473,
+      "val_accuracy": 0.8499
+    },
+    {
+      "epoch": 3,
+      "epoch_seconds": 21.09,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 5729.3,
+      "train_loss": 0.187,
+      "val_macro_f1": 0.7268,
+      "val_accuracy": 0.8456
+    },
+    {
+      "epoch": 4,
+      "epoch_seconds": 21.82,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 5538.4,
+      "train_loss": 0.151,
+      "val_macro_f1": 0.8247,
+      "val_accuracy": 0.9516
+    },
+    {
+      "epoch": 5,
+      "epoch_seconds": 22.01,
+      "wafers_seen_all_ranks": 120832,
+      "wafers_per_second": 5489.1,
+      "train_loss": 0.1294,
+      "val_macro_f1": 0.8154,
+      "val_accuracy": 0.9411
+    }
+  ],
+  "mean_wafers_per_second": 5550.9,
+  "test": {
+    "accuracy": 0.9421,
+    "macro_f1": 0.8211,
+    "macro_recall": 0.9324,
+    "per_class": {
+      "Center": {
+        "support": 935,
+        "precision": 0.78,
+        "recall": 0.9594,
+        "f1": 0.8604
+      },
+      "Donut": {
+        "support": 112,
+        "precision": 0.8092,
+        "recall": 0.9464,
+        "f1": 0.8724
+      },
+      "Edge-Loc": {
+        "support": 1027,
+        "precision": 0.5851,
+        "recall": 0.9172,
+        "f1": 0.7144
+      },
+      "Edge-Ring": {
+        "support": 1956,
+        "precision": 0.9719,
+        "recall": 0.9709,
+        "f1": 0.9714
+      },
+      "Loc": {
+        "support": 752,
+        "precision": 0.5395,
+        "recall": 0.8351,
+        "f1": 0.6555
+      },
+      "Near-full": {
+        "support": 30,
+        "precision": 0.8571,
+        "recall": 1.0,
+        "f1": 0.9231
+      },
+      "Random": {
+        "support": 196,
+        "precision": 0.8696,
+        "recall": 0.9184,
+        "f1": 0.8933
+      },
+      "Scratch": {
+        "support": 241,
+        "precision": 0.3754,
+        "recall": 0.9004,
+        "f1": 0.5299
+      },
+      "none": {
+        "support": 29520,
+        "precision": 0.997,
+        "recall": 0.9437,
+        "f1": 0.9696
+      }
+    },
+    "confusion": [
+      [
+        897,
+        5,
+        2,
+        0,
+        15,
+        0,
+        2,
+        2,
+        12
+      ],
+      [
+        0,
+        106,
+        1,
+        0,
+        3,
+        0,
+        2,
+        0,
+        0
+      ],
+      [
+        4,
+        0,
+        942,
+        11,
+        35,
+        0,
+        6,
+        6,
+        23
+      ],
+      [
+        0,
+        0,
+        46,
+        1899,
+        0,
+        0,
+        0,
+        0,
+        11
+      ],
+      [
+        13,
+        13,
+        27,
+        0,
+        628,
+        0,
+        3,
+        38,
+        30
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        30,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        2,
+        6,
+        0,
+        2,
+        5,
+        180,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        5,
+        0,
+        11,
+        0,
+        0,
+        217,
+        7
+      ],
+      [
+        234,
+        5,
+        581,
+        44,
+        470,
+        0,
+        14,
+        315,
+        27857
+      ]
+    ]
+  },
+  "augment": "flips"
+}

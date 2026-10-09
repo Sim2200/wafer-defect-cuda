@@ -1,0 +1,252 @@
+{
+  "conditions": {
+    "baseline": {
+      "macro_f1_mean": 0.8597,
+      "macro_f1_std": 0.0008,
+      "macro_f1_runs": [
+        0.8601,
+        0.8604,
+        0.8586
+      ],
+      "accuracy_mean": 0.9643,
+      "accuracy_std": 0.0003,
+      "per_class_recall_mean": {
+        "Center": 0.9348,
+        "Donut": 0.8661,
+        "Edge-Loc": 0.8809,
+        "Edge-Ring": 0.9625,
+        "Loc": 0.7717,
+        "Near-full": 0.9667,
+        "Random": 0.8895,
+        "Scratch": 0.6749,
+        "none": 0.9764
+      },
+      "per_class_recall_std": {
+        "Center": 0.0053,
+        "Donut": 0.0146,
+        "Edge-Loc": 0.008,
+        "Edge-Ring": 0.0017,
+        "Loc": 0.0082,
+        "Near-full": 0.0,
+        "Random": 0.0237,
+        "Scratch": 0.0393,
+        "none": 0.0008
+      },
+      "train_counts_effective": {
+        "Center": 2952,
+        "Donut": 397,
+        "Edge-Loc": 3660,
+        "Edge-Ring": 6799,
+        "Loc": 2479,
+        "Near-full": 101,
+        "Random": 556,
+        "Scratch": 846,
+        "none": 103086
+      },
+      "synthetic_wafers": 0
+    },
+    "flips": {
+      "macro_f1_mean": 0.8231,
+      "macro_f1_std": 0.0036,
+      "macro_f1_runs": [
+        0.8211,
+        0.8201,
+        0.8281
+      ],
+      "accuracy_mean": 0.9441,
+      "accuracy_std": 0.0019,
+      "per_class_recall_mean": {
+        "Center": 0.9615,
+        "Donut": 0.9494,
+        "Edge-Loc": 0.9094,
+        "Edge-Ring": 0.9707,
+        "Loc": 0.8276,
+        "Near-full": 0.9889,
+        "Random": 0.9252,
+        "Scratch": 0.8949,
+        "none": 0.9465
+      },
+      "per_class_recall_std": {
+        "Center": 0.0017,
+        "Donut": 0.0111,
+        "Edge-Loc": 0.0084,
+        "Edge-Ring": 0.0019,
+        "Loc": 0.008,
+        "Near-full": 0.0157,
+        "Random": 0.0064,
+        "Scratch": 0.0052,
+        "none": 0.0025
+      },
+      "train_counts_effective": {
+        "Center": 2952,
+        "Donut": 397,
+        "Edge-Loc": 3660,
+        "Edge-Ring": 6799,
+        "Loc": 2479,
+        "Near-full": 101,
+        "Random": 556,
+        "Scratch": 846,
+        "none": 103086
+      },
+      "synthetic_wafers": 0
+    },
+    "oversample_x4": {
+      "macro_f1_mean": 0.8581,
+      "macro_f1_std": 0.0049,
+      "macro_f1_runs": [
+        0.8514,
+        0.8629,
+        0.8599
+      ],
+      "accuracy_mean": 0.9651,
+      "accuracy_std": 0.0012,
+      "per_class_recall_mean": {
+        "Center": 0.9415,
+        "Donut": 0.8541,
+        "Edge-Loc": 0.8656,
+        "Edge-Ring": 0.9608,
+        "Loc": 0.7731,
+        "Near-full": 0.9667,
+        "Random": 0.8895,
+        "Scratch": 0.6459,
+        "none": 0.978
+      },
+      "per_class_recall_std": {
+        "Center": 0.0027,
+        "Donut": 0.0256,
+        "Edge-Loc": 0.0116,
+        "Edge-Ring": 0.0029,
+        "Loc": 0.0115,
+        "Near-full": 0.0272,
+        "Random": 0.021,
+        "Scratch": 0.0128,
+        "none": 0.0019
+      },
+      "train_counts_effective": {
+        "Center": 2952,
+        "Donut": 1588,
+        "Edge-Loc": 3660,
+        "Edge-Ring": 6799,
+        "Loc": 2479,
+        "Near-full": 404,
+        "Random": 2224,
+        "Scratch": 2479,
+        "none": 103086
+      },
+      "synthetic_wafers": 0
+    },
+    "synthetic_500": {
+      "macro_f1_mean": 0.8201,
+      "macro_f1_std": 0.0029,
+      "macro_f1_runs": [
+        0.824,
+        0.8193,
+        0.8169
+      ],
+      "accuracy_mean": 0.9617,
+      "accuracy_std": 0.0011,
+      "per_class_recall_mean": {
+        "Center": 0.933,
+        "Donut": 0.875,
+        "Edge-Loc": 0.865,
+        "Edge-Ring": 0.9605,
+        "Loc": 0.7181,
+        "Near-full": 0.8778,
+        "Random": 0.8622,
+        "Scratch": 0.6432,
+        "none": 0.976
+      },
+      "per_class_recall_std": {
+        "Center": 0.0035,
+        "Donut": 0.0073,
+        "Edge-Loc": 0.0088,
+        "Edge-Ring": 0.0032,
+        "Loc": 0.0099,
+        "Near-full": 0.0157,
+        "Random": 0.0083,
+        "Scratch": 0.0034,
+        "none": 0.0021
+      },
+      "train_counts_effective": {
+        "Center": 2952,
+        "Donut": 397,
+        "Edge-Loc": 3660,
+        "Edge-Ring": 6799,
+        "Loc": 2479,
+        "Near-full": 101,
+        "Random": 556,
+        "Scratch": 846,
+        "none": 103086
+      },
+      "synthetic_wafers": 2000
+    },
+    "synthetic_2000": {
+      "macro_f1_mean": 0.7737,
+      "macro_f1_std": 0.0041,
+      "macro_f1_runs": [
+        0.7693,
+        0.7791,
+        0.7727
+      ],
+      "accuracy_mean": 0.9542,
+      "accuracy_std": 0.0014,
+      "per_class_recall_mean": {
+        "Center": 0.9284,
+        "Donut": 0.8899,
+        "Edge-Loc": 0.8533,
+        "Edge-Ring": 0.9595,
+        "Loc": 0.6941,
+        "Near-full": 0.8222,
+        "Random": 0.8571,
+        "Scratch": 0.6943,
+        "none": 0.9679
+      },
+      "per_class_recall_std": {
+        "Center": 0.007,
+        "Donut": 0.0367,
+        "Edge-Loc": 0.0064,
+        "Edge-Ring": 0.0032,
+        "Loc": 0.0096,
+        "Near-full": 0.0314,
+        "Random": 0.011,
+        "Scratch": 0.0249,
+        "none": 0.0017
+      },
+      "train_counts_effective": {
+        "Center": 2952,
+        "Donut": 397,
+        "Edge-Loc": 3660,
+        "Edge-Ring": 6799,
+        "Loc": 2479,
+        "Near-full": 101,
+        "Random": 556,
+        "Scratch": 846,
+        "none": 103086
+      },
+      "synthetic_wafers": 8000
+    }
+  },
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "epochs": 6,
+  "classes": [
+    "Center",
+    "Donut",
+    "Edge-Loc",
+    "Edge-Ring",
+    "Loc",
+    "Near-full",
+    "Random",
+    "Scratch",
+    "none"
+  ],
+  "rare_classes": [
+    "Near-full",
+    "Donut",
+    "Random",
+    "Scratch"
+  ]
+}
