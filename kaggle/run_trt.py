@@ -107,13 +107,11 @@ def nsys_kernel_summary(report: Path, label: str) -> str:
 
 def ncu_metrics(text: str) -> str:
     """Pull the headline metrics out of `ncu --set default` text output."""
-    keep = ("Duration", "Memory Throughput", "DRAM Throughput", "Compute (SM) Throughput", "Achieved Occupancy",
-            "Theoretical Occupancy", "Registers Per Thread", "Block Size", "Grid Size", "L1/TEX Hit Rate", "L2 Hit Rate",
-            "Achieved Active Warps Per SM", "Waves Per SM")
     out = []
     for line in text.splitlines():
-        if any(line.strip().startswith(k) for k in keep):
-            out.append("- " + " ".join(line.split()))
+        t = line.strip()
+        if t.startswith(("gpu__", "sm__", "dram__", "l1tex__", "lts__", "launch__", "smsp__")):
+            out.append("- " + " ".join(t.split()))
     return "\n".join(out[:24]) or "(no metrics parsed)"
 
 
@@ -161,8 +159,14 @@ def main():
     weights = WORK / "cnn.pt"
     sh(PY, "-m", "wafer.train", "--data", data_npz, "--epochs", EPOCHS, "--out", RES / "trt_train.json", "--save", weights)
 
-    # 3. export, build engines, benchmark, accuracy
-    sh(PY, "-m", "wafer.trt_bench", "--data", data_npz, "--weights", weights, "--out-dir", RES, "--work", WORK / "trt_work")
+    # 3. export, build engines, benchmark, accuracy (NSIGHT_ONLY=1: export and the fp16 engine only, so a
+    # profiling re-run does not overwrite the benchmark files the README quotes)
+    nsight_only = os.environ.get("NSIGHT_ONLY") == "1"
+    sh(PY, "-m", "wafer.trt_bench", "--data", data_npz, "--weights", weights, "--out-dir", RES, "--work", WORK / "trt_work",
+       *(["--nsight-only"] if nsight_only else []))
+    if nsight_only:
+        for f in (RES / "trt_train.json", RES / "trt_env.json"):
+            f.unlink(missing_ok=True)
 
     # 4. Nsight
     md = ["# Nsight summary", "", f"GPU {env['gpu']}, driver {env['driver']}, CUDA {env['cuda']}, TensorRT {env['tensorrt']}, "
@@ -198,7 +202,14 @@ def main():
             else:
                 md.append(f"### {target}\n\ntorch.profiler run failed:\n```\n{(r.stdout + r.stderr)[-800:]}\n```\n")
     if shutil.which("ncu"):
-        r = sh("ncu", "--set", "default", "-k", "regex:median3x3", "--launch-skip", "10", "--launch-count", "1", PY, "-m",
+        # explicit metrics: the Kaggle image has ncu but not its section files, so --set prints nothing
+        metrics = ",".join(["gpu__time_duration.sum", "sm__throughput.avg.pct_of_peak_sustained_elapsed",
+                            "gpu__dram_throughput.avg.pct_of_peak_sustained_elapsed", "l1tex__throughput.avg.pct_of_peak_sustained_elapsed",
+                            "sm__warps_active.avg.pct_of_peak_sustained_active", "sm__maximum_warps_per_active_cycle_pct",
+                            "launch__registers_per_thread", "launch__occupancy_limit_registers", "launch__occupancy_limit_shared_mem",
+                            "launch__waves_per_multiprocessor", "l1tex__t_sector_hit_rate.pct", "lts__t_sector_hit_rate.pct",
+                            "dram__bytes_read.sum", "dram__bytes_write.sum", "smsp__inst_executed.sum"])
+        r = sh("ncu", "--metrics", metrics, "-k", "regex:median3x3", "--launch-skip", "10", "--launch-count", "1", PY, "-m",
                "wafer.profile_targets", "median", "--data", data_npz, "--iters", "3", check=False, capture=True)
         metrics = ncu_metrics(r.stdout)
         md.append("### Nsight Compute: median3x3_tiled_kernel (one launch)\n\n" + metrics + "\n")

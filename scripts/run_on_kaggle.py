@@ -52,7 +52,7 @@ def push_source(user: str) -> str:
     slug = f"{user}/wafer-defect-cuda-src"
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
-        for sub in ("src", "kernels", "tests"):
+        for sub in ("src", "kernels", "tests", "kaggle"):
             shutil.copytree(ROOT / sub, d / sub, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         (d / "dataset-metadata.json").write_text(json.dumps({"title": "wafer-defect-cuda-src", "id": slug, "licenses": [{"name": "CC0-1.0"}]}))
         exists = slug.split("/")[1] in kaggle("datasets", "list", "--mine", check=False)
@@ -66,6 +66,7 @@ EXPERIMENTS = {  # name -> (kernel script, internet needed)
     "all": ("run_all.py", False),
     "trt": ("run_trt.py", True),
     "diffusion": ("run_diffusion.py", True),  # internet for the diffusers wheel
+    "nsight": ("run_nsight.py", True),  # run_trt.py in profiling-only mode
 }
 
 

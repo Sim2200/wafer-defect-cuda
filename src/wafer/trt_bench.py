@@ -36,6 +36,7 @@ from .model import build
 from .train import standardise
 
 BATCHES = (1, 8, 32, 128)
+EntropyCalibrator = None  # set at run time once tensorrt is imported (make_calibrator_class)
 
 
 # ----------------------------------------------------------------------------- helpers
@@ -212,6 +213,7 @@ def main() -> None:
     ap.add_argument("--calib", type=int, default=512, help="train wafers used for INT8 calibration")
     ap.add_argument("--opset", type=int, default=17)
     ap.add_argument("--iters", type=int, default=100)
+    ap.add_argument("--nsight-only", action="store_true", help="export and build the fp16 engine for profiling, then stop")
     a = ap.parse_args()
     out_dir, work = Path(a.out_dir), Path(a.work)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -238,6 +240,11 @@ def main() -> None:
                       input_names=["input"], output_names=["logits"], dynamic_axes={"input": {0: "batch"}, "logits": {0: "batch"}},
                       dynamo=False)
     log(f"ONNX opset {a.opset}: {onnx_path.stat().st_size / 1e6:.2f} MB")
+    if a.nsight_only:
+        global EntropyCalibrator
+        EntropyCalibrator = make_calibrator_class()
+        build_engine(onnx_path, work / "wafer_cnn_fp16.plan", "fp16", None, log)
+        return
 
     backends: dict[str, tuple] = {}
 
@@ -264,7 +271,6 @@ def main() -> None:
     run, ort_version = ort_runner(onnx_path)
     backends["onnxruntime_cuda_fp32"] = (run, ort_version)
 
-    global EntropyCalibrator
     EntropyCalibrator = make_calibrator_class()
     builds = {}
     for precision in ("fp32", "fp16", "int8"):
