@@ -75,16 +75,44 @@ def push_kernel(user: str, src_slug: str, epochs: int, experiment: str = "all") 
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
         shutil.copy(ROOT / "kaggle" / script, d / script)
+        sources = ["qingyi/wm811k-wafer-map", src_slug]
+        if experiment == "diffusion" and f"{user}/wafer-defect-cuda-ddpm" in kaggle("datasets", "list", "--mine", check=False):
+            sources.append(f"{user}/wafer-defect-cuda-ddpm")  # a finished DDPM run's checkpoint and samples (see push_ddpm)
         (d / "kernel-metadata.json").write_text(json.dumps({
             "id": kid, "title": kid.split("/")[1], "code_file": script, "language": "python",
             "kernel_type": "script", "is_private": True, "enable_gpu": True, "enable_internet": internet,
-            "dataset_sources": ["qingyi/wm811k-wafer-map", src_slug], "competition_sources": [], "kernel_sources": []}))
+            "dataset_sources": sources, "competition_sources": [], "kernel_sources": []}))
         print(kaggle("kernels", "push", "-p", str(d)).strip().splitlines()[-1])
     return kid
 
 
+def push_ddpm(user: str, folder: Path) -> None:
+    """Upload a finished diffusion run's ddpm/ckpt.pt, synth_*.npz and study_*.npz (+ .json) as the
+    private dataset <user>/wafer-defect-cuda-ddpm, so the evaluation can be redone without training."""
+    slug = f"{user}/wafer-defect-cuda-ddpm"
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        (d / "ddpm").mkdir()
+        shutil.copy(folder / "ddpm" / "ckpt.pt", d / "ddpm" / "ckpt.pt")
+        shutil.copy(folder / "ddpm" / "train.json", d / "ddpm" / "train.json")
+        for f in list(folder.glob("synth_*.npz")) + list(folder.glob("study_*.npz")) + list(folder.glob("*.json")):
+            if f.name.startswith(("synth_", "study_")):
+                shutil.copy(f, d / f.name)
+        (d / "dataset-metadata.json").write_text(json.dumps({"title": "wafer-defect-cuda-ddpm", "id": slug, "licenses": [{"name": "CC0-1.0"}]}))
+        exists = slug.split("/")[1] in kaggle("datasets", "list", "--mine", check=False)
+        out = kaggle("datasets", "version" if exists else "create", "-p", str(d), *(["-m", "update"] if exists else []), "--dir-mode", "zip", check=False)
+        print(out.strip().splitlines()[-1])
+
+
 def wait(kid: str, poll: int = 30) -> str:
     t0 = time.time()
+    # Right after a push the status endpoint still reports the previous version for a while;
+    # wait until the new version shows up as queued or running before waiting for completion.
+    while time.time() - t0 < 300:
+        status = kaggle("kernels", "status", kid, check=False).strip().splitlines()[-1].lower()
+        if "queued" in status or "running" in status:
+            break
+        time.sleep(10)
     while True:
         status = kaggle("kernels", "status", kid, check=False).strip().splitlines()[-1]
         print(f"  {time.time() - t0:6.0f} s  {status}", flush=True)
@@ -125,8 +153,12 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=6)
     ap.add_argument("--user", default="", help="Kaggle username")
     ap.add_argument("--experiment", default="all", choices=sorted(EXPERIMENTS))
+    ap.add_argument("--push-ddpm", default="", help="folder with a finished run's ddpm/, synth_*.npz, study_*.npz to upload as a dataset")
     a = ap.parse_args()
     user = username(a.user or None)
+    if a.push_ddpm:
+        push_ddpm(user, Path(a.push_ddpm))
+        return
     kid = f"{user}/wafer-defect-cuda-{a.experiment}" if a.experiment != "all" else f"{user}/wafer-defect-cuda-run"
     if not a.pull_only:
         slug = push_source(user)

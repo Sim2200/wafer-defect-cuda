@@ -99,16 +99,29 @@ def main():
     del df
     tr, te = split.train, split.test
 
-    # 2. train the DDPM (DDP on both GPUs), resumable
+    # 2. train the DDPM (DDP on both GPUs), resumable. A finished run's checkpoint and samples can
+    # be attached as a dataset (wafer-defect-cuda-ddpm) to skip the 3 GPU-hours of training and
+    # sampling and redo only the evaluation.
     ddpm = WORK / "ddpm"
-    sh(PY, "-m", "torch.distributed.run", "--nproc_per_node=2", "--standalone", "-m", "wafer.diffusion", "train",
-       "--data", data_npz, "--epochs", EPOCHS, "--out-dir", ddpm, "--resume")
+    prior = next(iter(glob.glob("/kaggle/input/**/ddpm/ckpt.pt", recursive=True)), None)
+    if prior:
+        src = Path(prior).parents[1]
+        print("reusing checkpoint and samples from", src, flush=True)
+        shutil.copytree(src / "ddpm", ddpm, dirs_exist_ok=True)
+        for f in src.glob("*.npz"):
+            shutil.copy(f, WORK / f.name)
+        for f in src.glob("*.json"):
+            shutil.copy(f, WORK / f.name)
+    else:
+        sh(PY, "-m", "torch.distributed.run", "--nproc_per_node=2", "--standalone", "-m", "wafer.diffusion", "train",
+           "--data", data_npz, "--epochs", EPOCHS, "--out-dir", ddpm, "--resume")
     shutil.copy(ddpm / "train.json", RES / "diffusion_train.json")
 
     # 3. samples: 2,000 per rare class with DDIM-50 (the bulk set), plus the step-count study
     synth = WORK / "synth_2000.npz"
-    sh(PY, "-m", "wafer.diffusion", "sample", "--ckpt", ddpm / "ckpt.pt", "--classes", ",".join(RARE), "--n-per-class", 2000,
-       "--scheduler", "ddim", "--steps", 50, "--batch", 500, "--out", synth)
+    if not synth.exists():
+        sh(PY, "-m", "wafer.diffusion", "sample", "--ckpt", ddpm / "ckpt.pt", "--classes", ",".join(RARE), "--n-per-class", 2000,
+           "--scheduler", "ddim", "--steps", 50, "--batch", 500, "--out", synth)
     g = np.load(synth)
     rng = np.random.default_rng(0)
     keep = np.concatenate([rng.choice(np.where(g["y"] == D.CLASS_INDEX[c])[0], 500, replace=False) for c in RARE])
@@ -116,8 +129,9 @@ def main():
     steps_study = {}
     for sched, steps in (("ddpm", 1000), ("ddim", 50), ("ddim", 10)):
         out = WORK / f"study_{sched}{steps}.npz"
-        sh(PY, "-m", "wafer.diffusion", "sample", "--ckpt", ddpm / "ckpt.pt", "--classes", ",".join(RARE), "--n-per-class", 256,
-           "--scheduler", sched, "--steps", steps, "--batch", 512, "--out", out)
+        if not out.exists():
+            sh(PY, "-m", "wafer.diffusion", "sample", "--ckpt", ddpm / "ckpt.pt", "--classes", ",".join(RARE), "--n-per-class", 256,
+               "--scheduler", sched, "--steps", steps, "--batch", 512, "--out", out)
         steps_study[f"{sched}_{steps}"] = json.loads(out.with_suffix(".json").read_text())
 
     # 4. baseline classifier (seed 0) once more with saved weights: its penultimate features give the FID
@@ -190,9 +204,10 @@ def main():
     (RES / "diffusion_experiment.json").write_text(json.dumps(summary, indent=2))
     for f in sorted(RES.glob("*.json")):
         print("==", f.name, f.read_text()[:1500], flush=True)
-    for f in (data_npz, synth, WORK / "synth_500.npz", base_w, *WORK.glob("study_*.npz"), *WORK.glob("cls_*.json")):
-        f.unlink(missing_ok=True)
-    shutil.rmtree(ddpm, ignore_errors=True)
+    # the checkpoint and samples stay in the kernel output (about 0.5 GB) so a later run can reuse them
+    data_npz.unlink(missing_ok=True)
+    (ddpm / "ckpt.pt").exists() and torch.save({k: v for k, v in torch.load(ddpm / "ckpt.pt", map_location="cpu").items() if k != "opt"},
+                                               ddpm / "ckpt.pt")  # drop the optimizer state: sampling needs only the EMA weights
 
 
 if __name__ == "__main__":

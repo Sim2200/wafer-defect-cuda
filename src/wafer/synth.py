@@ -34,52 +34,43 @@ def from_signed(x: np.ndarray | torch.Tensor) -> np.ndarray | torch.Tensor:
 
 def nearest_neighbour_distance(queries: np.ndarray, reference: np.ndarray,
                                batch: int = 512, device: str | None = None) -> np.ndarray:
-    """For each query wafer, compute the minimum Hamming distance to any reference wafer.
+    """For each query wafer, the smallest fraction of differing pixels to any reference wafer.
 
-    Computes distances in batches on torch (GPU if device='cuda' and available).
-    Returns the minimum fraction of differing pixels (Hamming distance / 4096) for each query.
-    Complexity: O(Q * R * 4096) with batching for memory efficiency (~1 GB per batch).
+    Maps have three levels, so the number of matching pixels between two maps is the sum over
+    levels of the dot product of their one-hot masks. That turns the all-pairs Hamming distance
+    into three matrix multiplications, (Q, 4096) x (4096, R) each, instead of a (Q, R, 4096)
+    comparison tensor: 2,000 queries against 120,000 train wafers needs about 1 GB of GPU memory
+    in chunks rather than tens of GB.
 
     Args:
-        queries: (Q, 64, 64) uint8 array
-        reference: (R, 64, 64) uint8 array
-        batch: batch size for queries
-        device: 'cuda' or 'cpu'; None autodetects
+        queries: (Q, 64, 64) uint8 array with values 0, 1, 2
+        reference: (R, 64, 64) uint8 array with values 0, 1, 2
+        batch: queries per chunk
+        device: 'cuda' or 'cpu'; None picks cuda when available
 
     Returns:
-        (Q,) float32 array of minimum distances (fractions in [0,1])
+        (Q,) float32 array of minimum distances in [0, 1]
     """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    Q, R = len(queries), len(reference)
-    queries_flat = queries.reshape(Q, 4096)
-    reference_flat = reference.reshape(R, 4096)
-
-    q_tensor = torch.from_numpy(queries_flat).to(torch.int8)
-    r_tensor = torch.from_numpy(reference_flat).to(torch.int8)
-
-    if device == "cuda" and torch.cuda.is_available():
-        r_tensor = r_tensor.to("cuda")
-
-    min_distances = np.full(Q, 1.0, dtype=np.float32)
-
-    for q_start in range(0, Q, batch):
-        q_end = min(q_start + batch, Q)
-        q_batch = q_tensor[q_start:q_end].to(device)
-
-        # Chunk reference to stay under ~1 GB memory
-        ref_chunk_size = 4096
-        for r_start in range(0, R, ref_chunk_size):
-            r_end = min(r_start + ref_chunk_size, R)
-            r_batch = r_tensor[r_start:r_end].to(device)
-
-            # Shape (q_batch_size, 1, 4096) vs (r_batch_size, 4096) -> (q_batch_size, r_batch_size)
-            distances = (q_batch[:, None, :] != r_batch[None, :, :]).float().mean(-1)
-            min_in_batch = distances.min(1)[0].cpu().numpy()
-            min_distances[q_start:q_end] = np.minimum(min_distances[q_start:q_end], min_in_batch)
-
-    return min_distances
+    if device == "cuda" and not torch.cuda.is_available():
+        device = "cpu"
+    pixels = queries.shape[1] * queries.shape[2]
+    q = torch.from_numpy(queries.reshape(len(queries), pixels)).to(device)
+    r = torch.from_numpy(reference.reshape(len(reference), pixels)).to(device)
+    dtype = torch.float16 if device == "cuda" else torch.float32  # exact for sums up to 4,096
+    ref_chunk = 8192
+    best = torch.full((len(queries),), float(pixels), device=device, dtype=torch.float32)
+    for q0 in range(0, len(queries), batch):
+        qb = q[q0:q0 + batch]
+        q_onehot = [(qb == level).to(dtype) for level in (0, 1, 2)]
+        for r0 in range(0, len(reference), ref_chunk):
+            rb = r[r0:r0 + ref_chunk]
+            matches = torch.zeros(len(qb), len(rb), device=device, dtype=torch.float32)
+            for level, qo in enumerate(q_onehot):
+                matches += (qo @ (rb == level).to(dtype).T).float()
+            best[q0:q0 + batch] = torch.minimum(best[q0:q0 + batch], (pixels - matches).min(dim=1).values)
+    return (best / pixels).cpu().numpy().astype(np.float32)
 
 
 def near_copy_fraction(distances: np.ndarray, threshold: float) -> float:
