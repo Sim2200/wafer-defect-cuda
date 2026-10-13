@@ -111,6 +111,46 @@ median: in its halo load, `blockIdx.y * TILE + ly - 1` is unsigned arithmetic, s
 at the top edge wrapped to a huge value and clamped to the last row. Casting to `int` first fixed
 it (commit history has both runs).
 
+### The same kernels in OpenAI Triton (`results/kernels_triton.json`)
+
+The 3x3 median (replicate padding) and 3x3 convolution (zero padding) were rewritten in OpenAI
+Triton 3.6.0 (`results/triton_env.json`). Each program handles one BLOCK_H x 64 tile of one wafer,
+loads the nine neighbour tiles as shifted 2-D blocks, and the median uses the same 19-comparison
+sorting network as the CUDA kernel (`kernels/wafer_triton.py`). Parity tests
+(`tests/test_triton_kernels.py`, 7 passed on the T4, `results/triton_tests.txt`) check the median
+for exact equality with the PyTorch reference and the convolution to within 1e-5, on 64x64 batches
+and on odd sizes (50x37) with borders.
+
+| Op | Variant | Max abs error | ms per 1,024 wafers | Wafers/s |
+|---|---|---|---|---|
+| conv3x3 | PyTorch (cuDNN) | 0.0 | 0.204 | 5,024,147 |
+| conv3x3 | CUDA naive | 0.0 | 0.376 | 2,727,174 |
+| conv3x3 | CUDA tiled | 0.0 | 0.534 | 1,916,590 |
+| conv3x3 | Triton block 8 | 0.0 | 0.160 | 6,405,688 |
+| conv3x3 | Triton block 16 | 0.0 | **0.155** | 6,608,184 |
+| conv3x3 | Triton block 32 | 0.0 | 0.160 | 6,382,436 |
+| median3x3 | PyTorch (unfold + median) | 0.0 | 100.267 | 10,213 |
+| median3x3 | CUDA naive | 0.0 | **0.145** | 7,052,808 |
+| median3x3 | CUDA tiled | 0.0 | 0.289 | 3,545,644 |
+| median3x3 | Triton block 8 | 0.0 | 0.358 | 2,858,138 |
+| median3x3 | Triton block 16 | 0.0 | 0.651 | 1,574,109 |
+| median3x3 | Triton block 32 | 0.0 | 1.225 | 835,753 |
+
+Lines of code (`lines_of_code` in the JSON): the Triton median is 57 lines against 64 for the CUDA
+naive and tiled median kernels with their host wrapper, and the Triton convolution is 25 lines
+against 58 for the CUDA convolutions. The JSON note: "CUDA counts include both the naive and the
+shared-memory tiled kernel plus the host wrapper; Triton counts one kernel plus its wrapper (and the
+shared _grid helper for the conv)".
+
+For the convolution, Triton at block 16 (0.155 ms) beat both cuDNN (0.204 ms) and the hand-written
+CUDA kernel (0.376 ms). For the median, the best Triton block (8 rows, 0.358 ms) was 2.5x slower
+than the CUDA naive kernel (0.145 ms) and 1.2x slower than the tiled one (0.289 ms), but still about
+280x faster than PyTorch's unfold path (100.267 ms). Block size mattered for the median (block 32 at
+1.225 ms, 3.4x slower than block 8) and not for the conv. The likely reason is register pressure:
+the median keeps nine BLOCK_H x 64 tiles live for the sorting network, while the conv accumulates
+one tile. This is one T4 and one batch size (1,024), and the CUDA kernels were not retuned for this
+comparison.
+
 ### Classification (`results/metrics.json`, `results/run_1gpu.json`)
 
 Compact CNN (4 conv blocks, 390,633 parameters), 6 epochs, batch 256, AdamW + OneCycle, AMP,
@@ -263,6 +303,8 @@ python scripts/run_on_kaggle.py --user <kaggle-username> --epochs 6
 # waits, and pulls results/*.json, confusion_matrix.png and cuda_tests.txt back (about 6 minutes)
 python scripts/run_on_kaggle.py --user <kaggle-username> --experiment trt
 # builds and benchmarks TensorRT FP32, FP16 and INT8 engines on one T4
+python scripts/run_on_kaggle.py --user <kaggle-username> --experiment triton
+# OpenAI Triton versus CUDA and PyTorch on one T4 (Triton is on Kaggle's image; no install)
 python scripts/run_on_kaggle.py --user <kaggle-username> --experiment diffusion
 # 2x T4, about 3 GPU-hours; a finished run's checkpoint and samples can be re-attached as the
 # dataset wafer-defect-cuda-ddpm to redo only the evaluation, see `--push-ddpm`.
@@ -276,13 +318,14 @@ same steps run locally: `python -m wafer.bench_kernels ...`, `python -m wafer.tr
 ## Layout
 
 ```
+kernels/       wafer_ops.cu (CUDA) · wafer_triton.py (OpenAI Triton median3x3 and conv3x3)
 src/wafer/     data.py (load, lot-grouped split) · reference.py (PyTorch references) · kernels.py (extension wrapper)
                model.py · sampler.py (DistributedBalancedSampler) · train.py (DDP, AMP) · bench_kernels.py · metrics.py
                trt_bench.py · profile_targets.py · diffusion.py · synth.py
-kaggle/        run_all.py (the whole experiment on one kernel) · run_trt.py · run_diffusion.py
+kaggle/        run_all.py (the whole experiment on one kernel) · run_trt.py · run_diffusion.py · run_triton_kernels.py
                scripts/run_on_kaggle.py (push, poll, pull)
 tests/         CPU tests (23) + CUDA parity tests (5, run on Kaggle)
-               test_synth.py · test_train_options.py
+               test_synth.py · test_train_options.py · test_triton_kernels.py
 results/       data_summary · kernels · metrics · run_1gpu · run_2gpu · ddp_scaling · env · cuda_tests.txt · confusion_matrix.png
                diffusion_train · diffusion_samples · diffusion_experiment · figures/diffusion_grid.png
 ```

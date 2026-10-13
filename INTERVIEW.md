@@ -130,6 +130,36 @@ Then the classifier experiment: 6 epochs, 3 seeds each. Baseline macro-F1 was 0.
 
 I kept this negative result because it is honest. With this generator and this classifier recipe, synthetic wafers made things worse. Next: train the DDPM longer, train only on rare classes (101 Near-full vs 2,952 Center), filter by classifier confidence or by FID, mix a smaller share, or tune flips with a precision constraint. The generator's one seed was a limit; the classifier got 3 seeds but the DDPM got 1, so the negative result is for this setup, not the idea.
 
+## Triton versus CUDA: what I learned writing the same kernel twice
+
+After the CUDA kernels I rewrote the median and the 3x3 convolution in OpenAI Triton
+(`kernels/wafer_triton.py`), keeping the same 19-comparison network for the median. Triton works
+in blocks instead of threads: each program owns a BLOCK_H x 64 tile of one wafer, and I load the
+nine neighbour tiles as shifted 2-D blocks. Out-of-image positions are handled with masks instead
+of per-pixel bounds checks, I never manage shared memory by hand, and the compiler can vectorise
+the loads.
+
+The cost is control. In CUDA I decide how many registers each thread uses and where the data
+lives. In Triton the compiler makes those decisions, and the median is where that bites: the
+sorting network needs all nine tiles live at once, so each program holds nine BLOCK_H x 64 tiles
+in registers. The convolution accumulates one tile, so it has no such problem.
+
+The outcome went both ways. The Triton convolution at block 16 ran in 0.155 ms, faster than cuDNN
+(0.204 ms) and my CUDA kernel (0.376 ms). The Triton median at its best block size (8) ran in
+0.358 ms, 2.5x slower than my naive CUDA median (0.145 ms), though still about 280x faster than
+PyTorch's unfold path (100.267 ms).
+
+The block-size sweep showed the same split. Block size changed the median a lot (block 32 at
+1.225 ms, 3.4x slower than block 8) and barely changed the convolution (0.155 to 0.160 ms across
+blocks 8, 16 and 32). My likely explanation is register pressure from the nine live tiles, but
+that is an inference from the timings, not something I profiled. The CUDA kernels were not
+retuned for this comparison, and everything is one T4 at batch 1,024.
+
+My conclusion is that for a memory-light stencil the compiler did well, and for a register-heavy
+one hand-written CUDA still won. Before I claim Triton cannot match CUDA on the median, I would
+try a smaller BLOCK_W, or recompute from fewer loaded rows, to see whether the register budget is
+the real constraint.
+
 ## Limits, stated plainly
 
 T4s, not A100s or H100s; one node; six epochs; one seed per run; a sleep-free benchmark but a
