@@ -67,6 +67,7 @@ EXPERIMENTS = {  # name -> (kernel script, internet needed)
     "trt": ("run_trt.py", True),
     "diffusion": ("run_diffusion.py", True),  # internet for the diffusers wheel
     "nsight": ("run_nsight.py", True),  # run_trt.py in profiling-only mode
+    "triton": ("run_triton_kernels.py", False),  # OpenAI Triton kernels vs CUDA vs PyTorch (triton is on the image)
 }
 
 
