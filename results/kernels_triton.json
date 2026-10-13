@@ -1,0 +1,115 @@
+{
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu128",
+  "cuda": "12.8",
+  "batch": 1024,
+  "iters": 50,
+  "repeats": 3,
+  "timing": "CUDA events, median of repeats of mean ms per call",
+  "rows": [
+    {
+      "op": "conv3x3",
+      "variant": "pytorch_cudnn",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.2038,
+      "wafers_per_second": 5024147.1
+    },
+    {
+      "op": "conv3x3",
+      "variant": "cuda_naive",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.3755,
+      "wafers_per_second": 2727173.6
+    },
+    {
+      "op": "conv3x3",
+      "variant": "cuda_tiled",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.5343,
+      "wafers_per_second": 1916590.1
+    },
+    {
+      "op": "median3x3",
+      "variant": "pytorch_unfold",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 100.267,
+      "wafers_per_second": 10212.7
+    },
+    {
+      "op": "median3x3",
+      "variant": "cuda_naive",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.1452,
+      "wafers_per_second": 7052807.8
+    },
+    {
+      "op": "median3x3",
+      "variant": "cuda_tiled",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.2888,
+      "wafers_per_second": 3545643.5
+    },
+    {
+      "op": "conv3x3",
+      "variant": "triton_block8",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.1599,
+      "wafers_per_second": 6405688.2
+    },
+    {
+      "op": "median3x3",
+      "variant": "triton_block8",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.3583,
+      "wafers_per_second": 2858138.2
+    },
+    {
+      "op": "conv3x3",
+      "variant": "triton_block16",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.155,
+      "wafers_per_second": 6608184.1
+    },
+    {
+      "op": "median3x3",
+      "variant": "triton_block16",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.6505,
+      "wafers_per_second": 1574109.0
+    },
+    {
+      "op": "conv3x3",
+      "variant": "triton_block32",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 0.1604,
+      "wafers_per_second": 6382435.9
+    },
+    {
+      "op": "median3x3",
+      "variant": "triton_block32",
+      "batch": 1024,
+      "max_abs_error_vs_reference": 0.0,
+      "ms_per_batch": 1.2252,
+      "wafers_per_second": 835753.1
+    }
+  ],
+  "triton": "3.6.0",
+  "lines_of_code": {
+    "cuda_median3x3_naive_and_tiled": 64,
+    "triton_median3x3": 57,
+    "cuda_conv3x3_naive_and_tiled": 58,
+    "triton_conv3x3": 25,
+    "note": "CUDA counts include both the naive and the shared-memory tiled kernel plus the host wrapper; Triton counts one kernel plus its wrapper (and the shared _grid helper for the conv)"
+  }
+}
